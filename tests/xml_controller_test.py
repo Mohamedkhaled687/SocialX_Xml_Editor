@@ -5,7 +5,6 @@ import sys
 import os
 # Add the parent directory to sys.path so we can find xml_controller.py
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from src.controllers.xml_controller import XMLcontroller  # Assumes your class is in xml_controller.py
 import unittest
 
