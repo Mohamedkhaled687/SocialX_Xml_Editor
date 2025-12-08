@@ -1,138 +1,123 @@
+import textwrap  # Imported to handle clean text wrapping
+
 class XMLcontroller:
     """
-    Main controller class responsible for parsing, formatting (pretty-printing),
-    and minifying XML strings manually without external XML parsers.
+    Main controller class for parsing, formatting with text-wrapping, 
+    and minifying XML strings.
     """
 
     # --- 1. HELPER METHOD (Tokenizer) ---
     def _get_tokens(self, xml_string):
         """
         Parses a raw XML string into a structured list of tokens.
-        A 'Token' is strictly defined here as either:
-        1. A Tag (e.g., <name>, </id>)
-        2. Text content between tags.
         """
         tokens = []
         i = 0
         length = len(xml_string)
         
-        # Iterate through the string character by character
         while i < length:
-            # Case 1: We found the start of a tag
             if xml_string[i] == '<':
-                # Find the position of the closing bracket '>'
                 j = xml_string.find('>', i)
-                if j == -1: break  # Stop if XML is malformed (no closing bracket)
-                
-                # Extract the tag substring (e.g., "<id>")
+                if j == -1: break 
                 tag = xml_string[i:j+1]
                 tokens.append(tag)
-                
-                # Move the main index 'i' past this tag
                 i = j + 1
-            
-            # Case 2: We are inside text content (between tags)
             else:
                 j = i
-                # Read forward until we hit the start of the next tag
                 while j < length and xml_string[j] != '<':
                     j += 1
-                
-                # Extract the text segment
                 raw_text = xml_string[i:j]
-                
-                # Validation: If the text is just empty whitespace (newlines/tabs), ignore it.
-                # We only want significant text data.
                 if not raw_text.strip():
                     i = j
                     continue
-                
                 tokens.append(raw_text.strip())
                 i = j
         return tokens
 
-    # --- 2. FORMAT METHOD (Pretty-Printer) ---
+    # --- 2. FORMAT METHOD (With Wrap Logic) ---
     def format(self, xml_string): 
         """
-        Reconstructs the XML string with proper indentation and newlines.
-        It handles 'Leaf Nodes' (Tag -> Text -> EndTag) specifically to keep 
-        them on a single line, regardless of text length.
+        Reconstructs the XML. 
+        - Short text nodes stay on one line: <name>Value</name>
+        - Long text nodes (like <body>) are wrapped across multiple lines 
+          and indented correctly.
         """
         tokens = self._get_tokens(xml_string)
         formatted = []
-        level = 0  # depth level for indentation
-        indentation = "    " # 4 spaces for indentation
+        level = 0
+        indentation = "    " 
         k = 0
+        
+        # Configuration for text wrapping
+        MAX_WIDTH = 80  # Max characters per line for text content
         
         while k < len(tokens):
             token = tokens[k]
             
-            # --- Scenario A: Closing Tag (e.g., </user>) ---
+            # --- Scenario A: Closing Tag ---
             if token.startswith('</'):
-                # Decrease indentation level before printing
-                # max(0, ...) prevents negative indentation errors
                 level = max(0, level - 1)
                 formatted.append((indentation * level) + token)
                 
-            # --- Scenario B: Opening Tag (e.g., <user>) ---
+            # --- Scenario B: Opening Tag ---
             elif token.startswith('<') and not token.startswith('</'):
                 
-                # CHECK: Is this a "Leaf Node"?
-                # Logic: Is the Next token text? AND is the token after that a Closing tag?
-                # Example: <body> ...text... </body>
+                # Check for "Leaf Node" (Open -> Text -> Close)
                 if (k + 2 < len(tokens) and 
                     not tokens[k+1].startswith('<') and 
                     tokens[k+2].startswith('</')):
                     
-                    # 1. Get the text content from the next token
+                    # 1. Get and Clean Text
+                    # We remove existing newlines to treat it as one text block first
                     text_content = tokens[k+1]
-                    
-                    # 2. Flatten the text: 
-                    # The .split() removes all existing newlines/tabs, 
-                    # and .join(" ") puts it back together as one long line.
                     clean_text = " ".join(text_content.split())
                     
-                    # 3. Build the single-line string: Indent + OpenTag + Text + CloseTag
-                    line = (indentation * level) + tokens[k] + clean_text + tokens[k+2]
-                    formatted.append(line)
+                    # 2. DECISION: Wrap or Inline?
+                    if len(clean_text) > MAX_WIDTH:
+                        # --- LONG TEXT LOGIC (Wrap) ---
+                        
+                        # A. Append Opening Tag (Normal Indent)
+                        formatted.append((indentation * level) + tokens[k])
+                        
+                        # B. Wrap the text
+                        # using textwrap to break text nicely at spaces
+                        wrapper = textwrap.TextWrapper(width=MAX_WIDTH, break_long_words=False)
+                        wrapped_lines = wrapper.wrap(clean_text)
+                        
+                        # C. Append Wrapped Lines (Indent + 1 Level)
+                        for line in wrapped_lines:
+                            formatted.append((indentation * (level + 1)) + line)
+                            
+                        # D. Append Closing Tag (Normal Indent, on new line)
+                        formatted.append((indentation * level) + tokens[k+2])
+                        
+                    else:
+                        # --- SHORT TEXT LOGIC (Inline) ---
+                        # Keep <tag>text</tag> on a single line
+                        line = (indentation * level) + tokens[k] + clean_text + tokens[k+2]
+                        formatted.append(line)
                     
-                    # Skip the next two tokens (the text and the closing tag) 
-                    # because we just handled them manually.
+                    # Skip the next two tokens (text and close tag)
                     k += 2 
                     
                 else:
-                    # It's a Parent Tag (contains other tags inside).
-                    # Print it, then increase indentation for the children.
+                    # Parent Tag
                     formatted.append((indentation * level) + token)
                     level += 1
             
-            # --- Scenario C: Loose Text Content ---
-            # Fallback for mixed content scenarios (rare in data-centric XML)
+            # --- Scenario C: Loose Text (Fallback) ---
             else:
-                lines = token.split('\n')
-                aligned_lines = []
-                for line in lines:
-                    stripped_line = line.strip()
-                    if stripped_line:
-                        aligned_lines.append((indentation * level) + stripped_line)
-                formatted.append("\n".join(aligned_lines))
+                formatted.append((indentation * level) + token.strip())
             
-            # Move to next token
             k += 1
             
         return "\n".join(formatted)
 
     # --- 3. MINIFY METHOD ---
     def minify(self, xml_string):
-        """
-        Removes all formatting (newlines, spaces between tags) to create 
-        the smallest valid string representation.
-        """
-        # Since _get_tokens already strips whitespace around text and ignores
-        # whitespace-only nodes, joining them results in a minified string.
         tokens = self._get_tokens(xml_string)
         return "".join(tokens)
-
+    
 # --- Test Section ---
 # Defining a complex XML string to test indentation and long-text flattening
 input_xml = """<?xml version="1.0" encoding="UTF-8"?>
