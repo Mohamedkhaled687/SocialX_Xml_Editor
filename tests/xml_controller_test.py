@@ -186,7 +186,200 @@ class TestXMLController(unittest.TestCase):
         expected_fragment = "    <child>Text</child>"
         self.assertIn(expected_fragment, formatted)
 
+xml_test = """
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+    <user>
+        <id>1</id>
+        <name>Ahmed Ali</name>
+        <posts>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        economy
+                    </topic>
+                    <topic>
+                        finance
+                    </topic>
+                </topics>
+            </post>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        sports
+                    </topic>
+                    <topic>
+                        history
+                    </topic>
+                </topics>
+            </post>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        food
+                    </topic>
+                    <topic>
+                        health
+                    </topic>
+                </topics>
+            </post>
+        </posts>
+        <followers>
+            <follower>
+                <id>2</id>
+            </follower>
+            <follower>
+                <id>3</id>
+            </follower>
+        </followers>
+        <followings>
+            <following>
+                <id>2</id>
+            </following>
+            <following>
+                <id>3</id>
+            </following>
+        </followings>
+    </user>
+    <user>
+        <id>2</id>
+        <name>Yasser Ahmed</name>
+        <posts>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        sports
+                    </topic>
+                    <topic>
+                        health
+                    </topic>
+                </topics>
+            </post>
+        </posts>
+        <followers>
+            <follower>
+                <id>1</id>
+            </follower>
+        </followers>
+        <followings>
+            <following>
+                <id>1</id>
+            </following>
+        </followings>
+    </user>
+    <user>
+        <id>3</id>
+        <name>Mohamed Sherif</name>
+        <posts>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        sports
+                    </topic>
+                </topics>
+            </post>
+        </posts>
+        <followers>
+            <follower>
+                <id>1</id>
+            </follower>
+        </followers>
+        <followings>
+            <following>
+                <id>1</id>
+            </following>
+        </followings>
+    </user>
+    <user>
+        <id>4</id>
+        <name>Fady Faragallah</name>
+        <posts>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        Data
+                    </topic>
+                    <topic>
+                        Software Engineering
+                    </topic>
+                </topics>
+            </post>
+        </posts>
+        <followers>
+            <follower>
+                <id>1</id>
+            </follower>
+            <follower>
+                <id>2</id>
+            </follower>
+            <follower>
+                <id>3</id>
+            </follower>
+        </followers>
+        <followings>
+            <following>
+                <id>2</id>
+            </following>
+    </user>
+        </followings>
+"""
+
+# Create controller instance
+controller_test = XMLController(xml_test)
+
+print("=" * 80)
+print("VALIDATION REPORT (BEFORE CORRECTION)")
+print("=" * 80)
+print(controller_test.validate())
+
+print("\n" + "=" * 80)
+print("AUTO-CORRECTING XML...")
+print("=" * 80)
+
+# Auto-correct the XML (this returns the formatted corrected XML)
+corrected_formatted_xml = controller_test.autocorrect()
+
+print("\n✓ Auto-correction completed!")
+
+# Write corrected and formatted XML to file
+formatted_filename = "corrected_formatted.xml"
+with open(formatted_filename, 'w', encoding='utf-8') as f:
+    f.write(corrected_formatted_xml)
+
+print(f"✓ Corrected and formatted XML written to '{formatted_filename}'")
+
+print("\n" + "=" * 80)
+print("VALIDATION REPORT (AFTER CORRECTION)")
+print("=" * 80)
+print(controller_test.validate())
+
+# Also write the minified version
+minified_xml = controller_test.minify()
+minified_filename = "corrected_minified.xml"
+with open(minified_filename, 'w', encoding='utf-8') as f:
+    f.write(minified_xml)
+
+print(f"\n✓ Minified XML written to '{minified_filename}'")
+
 # Standard Python idiom to run tests when script is executed directly
-if __name__ == '__main__':
+if __name__ == '_main_':
     # Run all test methods in this test case
-    unittest.main()
+   unittest.main()
