@@ -64,3 +64,27 @@ class XMLController:
             return False, f"XML parsing failed during formatting check: {str(e)}"
         except Exception as e:                          #catch other errors    
             return False, f"Failed to format XML: {str(e)}"
+        
+    def minify_xml_file(self, file_path, output_path):
+        """
+        Minifies the XML file and saves it to a specified output path.
+        
+        Returns:
+            tuple: (success: bool, message: str)
+        """
+        try:
+            success, raw_content = file_io.read_file(file_path)         #Read the content
+            if not success:
+                 return False, f"Failed to read file for minification: {raw_content}"
+                 
+            minified_xml = file_io.minify_xml(raw_content)              #Minify the content
+            
+            success, message = file_io.write_file(output_path, minified_xml, is_xml=False)
+            
+            if success:
+                return True, f"XML file minified successfully and saved to {output_path}."
+            else:
+                return False, f"Failed to save minified XML: {message}"
+                
+        except Exception as e:
+            return False, f"Failed to minify XML: {str(e)}"
