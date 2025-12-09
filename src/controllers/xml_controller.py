@@ -17,31 +17,31 @@ Date: [Date]
 
 import textwrap
 import re
-from typing import List, Dict, Set, Tuple
+from typing import List
 
 
 class XMLController:
     """
     Main controller class for parsing, formatting, minifying, and validating
     XML strings.
-    
+
     This class provides methods to:
     1. Parse raw XML into structured tokens
     2. Format XML with intelligent indentation and text wrapping
     3. Minify XML by removing all unnecessary whitespace
     4. Validate XML for structural and semantic errors
-    
+
     Attributes:
         xml_string (str): The XML content to be processed
     """
-    
+
     def __init__(self, xml: str = None):
         """
         Initialize the XMLController with optional XML content.
-        
+
         Args:
             xml (str, optional): Initial XML string to process. Defaults to None.
-        
+
         Example:
             controller = XMLController("<root><child>text</child></root>")
         """
@@ -50,14 +50,14 @@ class XMLController:
     # ===================================================================
     # SECTION 1: HELPER METHODS (Setter, Getter, Tokenizer)
     # ===================================================================
-    
+
     def set_xml_string(self, xml_string: str):
         """
         Set or update the XML string to be processed.
-        
+
         Args:
             xml_string (str): The new XML content
-            
+
         Example:
             controller.set_xml_string("<person><name>John</name></person>")
         """
@@ -66,27 +66,27 @@ class XMLController:
     def get_xml_string(self) -> str:
         """
         Retrieve the current XML string.
-        
+
         Returns:
             str: The current XML content stored in the controller
-            
+
         Example:
             xml = controller.get_xml_string()
         """
         return self.xml_string
-    
+
     def _get_tokens(self) -> List:
         """
         Parse a raw XML string into a structured list of tokens.
-        
+
         This method breaks down XML into its component parts:
         - Opening tags: <tag>, <tag attr="value">
         - Closing tags: </tag>
         - Text content: the text between tags
-        
+
         Returns:
             List: A list of tokens extracted from the XML
-            
+
         Example:
             Input:  "<user><name>Ali</name></user>"
             Output: ['<user>', '<name>', 'Ali', '</name>', '</user>']
@@ -98,45 +98,45 @@ class XMLController:
         while i < length:
             if self.xml_string[i] == '<':
                 j = self.xml_string.find('>', i)
-                
-                if j == -1: 
+
+                if j == -1:
                     break
-                
+
                 tag = self.xml_string[i:j + 1]
                 tokens.append(tag)
                 i = j + 1
-                
+
             else:
                 j = i
-                
+
                 while j < length and self.xml_string[j] != '<':
                     j += 1
-                
+
                 raw_text = self.xml_string[i:j]
-                
+
                 if not raw_text.strip():
                     i = j
                     continue
-                
+
                 tokens.append(raw_text.strip())
                 i = j
-                
+
         return tokens
 
     # ===================================================================
     # SECTION 2: FORMAT METHOD (Main Formatting Logic)
     # ===================================================================
-    
+
     def format(self) -> str:
         """
         Reconstruct and format the XML with proper indentation and text wrapping.
-        
+
         Formatting Rules:
         1. Each nesting level is indented by 4 spaces
         2. Short text (≤80 chars) stays inline: <name>Value</name>
         3. Long text (>80 chars) is wrapped across multiple lines
         4. Wrapped text is indented one level deeper than its tag
-        
+
         Returns:
             str: Beautifully formatted XML string with newlines
         """
@@ -190,11 +190,11 @@ class XMLController:
     # ===================================================================
     # SECTION 3: MINIFY METHOD
     # ===================================================================
-    
+
     def minify(self) -> str:
         """
         Minify the XML by removing all whitespace and newlines.
-        
+
         Returns:
             str: Minified XML string (single line, no spaces)
         """
@@ -204,260 +204,128 @@ class XMLController:
     # ===================================================================
     # SECTION 4: VALIDATION METHOD (XML Consistency Checker)
     # ===================================================================
-    
-    def validate(self) -> Dict:
+
+    def validate(self):
         """
-        Validate the XML for structural and semantic errors.
-        
-        This method performs comprehensive validation including:
-        - Syntax errors (malformed tags)
-        - Structure errors (mismatched/unclosed tags)
-        - Semantic errors (duplicate IDs, invalid references, empty fields)
-        
-        Returns:
-            Dict: Validation results with structure:
-            {
-                'is_valid': bool,
-                'error_count': int,
-                'errors': [
-                    {
-                        'line': int,
-                        'description': str,
-                        'type': str  # 'syntax', 'semantic', 'structure'
-                    },
-                    ...
-                ]
-            }
-            
-        Example:
-            controller = XMLController("<user><name>Ali</name></user>")
-            result = controller.validate()
-            if result['is_valid']:
-                print("XML is valid!")
-            else:
-                for error in result['errors']:
-                    print(f"Line {error['line']}: {error['description']}")
+        Parses self.xml_string, detects structural errors, and returns a new string
+        where errors are annotated with '<---' at the end of the problematic lines.
         """
-        if not self.xml_string:
-            return {
-                'is_valid': False,
-                'error_count': 1,
-                'errors': [{
-                    'line': 0,
-                    'description': 'No XML content to validate',
-                    'type': 'structure'
-                }]
-            }
-        
-        errors = []
-        tag_stack: List[Tuple[str, int]] = []
-        user_ids: Set[str] = set()
-        all_user_ids: Set[str] = set()
-        
-        # First pass - collect all user IDs
-        all_user_ids = self._collect_user_ids()
-        
-        # Second pass - validate structure and semantics
+        stack = []
+
+        # Split string into a list of lines.
+        # We will modify this list directly to add annotations.
         lines = self.xml_string.split('\n')
-        follower_ids = []
-        
-        for line_num, line in enumerate(lines, 1):
-            original_line = line
-            line = line.strip()
-            
-            if not line:
-                continue
-            
-            # Check for basic XML syntax errors
-            if '<' in line and '>' not in line:
-                error = {
-                    'line': line_num,
-                    'description': "Malformed tag: missing closing '>'",
-                    'type': 'syntax'
-                }
-                if show_line_preview: # type: ignore
-                    error['line_content'] = original_line.rstrip()
-                    pointer_pos = original_line.find('<')
-                    error['pointer'] = ' ' * pointer_pos + '^' * (len(line) - pointer_pos)
-                errors.append(error)
-                continue
-            
-            if '>' in line and '<' not in line:
-                error = {
-                    'line': line_num,
-                    'description': "Malformed tag: missing opening '<'",
-                    'type': 'syntax'
-                }
-                if show_line_preview: # type: ignore
-                    error['line_content'] = original_line.rstrip()
-                    pointer_pos = original_line.find('>')
-                    error['pointer'] = ' ' * pointer_pos + '^'
-                errors.append(error)
-                continue
-            
-            # Process opening tags
-            opening_tags = re.findall(r'<([a-zA-Z_][a-zA-Z0-9_]*)[^/>]*>', line)
-            for tag in opening_tags:
-                # Skip if it's a self-closing or has closing tag on same line
-                if not re.search(rf'<{tag}[^/>]*/>|<{tag}[^>]*>.*?</{tag}>', line):
-                    tag_stack.append((tag, line_num))
-            
-            # Process closing tags
-            closing_tags = re.findall(r'</([a-zA-Z_][a-zA-Z0-9_]*)>', line)
-            for tag in closing_tags:
-                if not tag_stack:
-                    error = {
-                        'line': line_num,
-                        'description': f"Closing tag '</{tag}>' without matching opening tag",
-                        'type': 'structure'
-                    }
-                    if show_line_preview: # type: ignore
-                        error['line_content'] = original_line.rstrip()
-                        pointer_pos = original_line.find(f'</{tag}>')
-                        error['pointer'] = ' ' * pointer_pos + '^' * (len(f'</{tag}>'))
-                    errors.append(error)
-                elif tag_stack[-1][0] != tag:
-                    expected = tag_stack[-1][0]
-                    error = {
-                        'line': line_num,
-                        'description': f"Mismatched tags: expected '</{expected}>' but found '</{tag}>'",
-                        'type': 'structure'
-                    }
-                    if show_line_preview: # type: ignore
-                        error['line_content'] = original_line.rstrip()
-                        pointer_pos = original_line.find(f'</{tag}>')
-                        error['pointer'] = ' ' * pointer_pos + '^' * (len(f'</{tag}>'))
-                    errors.append(error)
-                    tag_stack.pop()
+
+        # We create a separate list for output to avoid modifying the logic
+        # while iterating (though strings are immutable, this keeps it clean).
+        annotated_lines = lines[:]
+
+        for line_idx, line in enumerate(lines):
+            # Regex to find tags: captures <tag> or </tag>
+            # Group 1: '/' if closing, empty if opening
+            # Group 2: The tag name
+            tags = re.finditer(r'<(/?)(\w+)[^>]*>', line)
+
+            for match in tags:
+                is_closing = match.group(1) == '/'
+                tag_name = match.group(2)
+
+                if not is_closing:
+                    # OPENING TAG: Push tag name and Line Index to stack
+                    stack.append({'tag': tag_name, 'line_idx': line_idx})
                 else:
-                    tag_stack.pop()
-            
-            # Semantic validation - check user IDs
-            if '<id>' in line and len(tag_stack) >= 2:
-                parent = tag_stack[-1][0] if tag_stack else None
-                
-                match = re.search(r'<id>(.+?)</id>', line)
-                if match:
-                    user_id = match.group(1).strip()
-                    
-                    if not user_id:
-                        error = {
-                            'line': line_num,
-                            'description': "Empty user ID",
-                            'type': 'semantic'
-                        }
-                        if show_line_preview: # type: ignore
-                            error['line_content'] = original_line.rstrip()
-                            pointer_pos = original_line.find('<id>')
-                            error['pointer'] = ' ' * pointer_pos + '^' * len('<id></id>')
-                        errors.append(error)
-                    elif parent == 'user':
-                        # This is a user's main ID
-                        if user_id in user_ids:
-                            error = {
-                                'line': line_num,
-                                'description': f"Duplicate user ID '{user_id}'",
-                                'type': 'semantic'
-                            }
-                            if show_line_preview: # type: ignore
-                                error['line_content'] = original_line.rstrip()
-                                pointer_pos = original_line.find('<id>')
-                                error['pointer'] = ' ' * pointer_pos + '^' * len(f'<id>{user_id}</id>')
-                            errors.append(error)
-                        else:
-                            user_ids.add(user_id)
-                    elif parent == 'follower':
-                        # This is a follower reference
-                        follower_ids.append((user_id, line_num, original_line))
-            
-            # Check for empty required fields
-            if '<name></name>' in line or '<name> </name>' in line:
-                errors.append({
-                    'line': line_num,
-                    'description': "Empty user name",
-                    'type': 'semantic'
-                })
-            
-            if '<body></body>' in line or '<body> </body>' in line:
-                errors.append({
-                    'line': line_num,
-                    'description': "Empty post body",
-                    'type': 'semantic'
-                })
-        
-        # Check for unclosed tags
-        if tag_stack:
-            for tag, line in tag_stack:
-                error = {
-                    'line': line,
-                    'description': f"Unclosed tag '<{tag}>'",
-                    'type': 'structure'
-                }
-                if show_line_preview: # type: ignore
-                    line_content = lines[line - 1] if line <= len(lines) else ""
-                    error['line_content'] = line_content.rstrip()
-                    pointer_pos = line_content.find(f'<{tag}')
-                    if pointer_pos >= 0:
-                        end_pos = line_content.find('>', pointer_pos)
-                        if end_pos >= 0:
-                            error['pointer'] = ' ' * pointer_pos + '^' * (end_pos - pointer_pos + 1)
-                        else:
-                            error['pointer'] = ' ' * pointer_pos + '^'
-                errors.append(error)
-        
-        # Check follower references
-        for item in follower_ids:
-            if len(item) == 3:
-                follower_id, line_num, original_line = item
-            else:
-                follower_id, line_num = item
-                original_line = lines[line_num - 1] if line_num <= len(lines) else ""
-            
-            if follower_id not in all_user_ids:
-                error = {
-                    'line': line_num,
-                    'description': f"Invalid follower reference: user ID '{follower_id}' does not exist",
-                    'type': 'semantic'
-                }
-                if show_line_preview: # type: ignore
-                    error['line_content'] = original_line.rstrip()
-                    pointer_pos = original_line.find('<id>')
-                    if pointer_pos >= 0:
-                        error['pointer'] = ' ' * pointer_pos + '^' * len(f'<id>{follower_id}</id>')
+                    # CLOSING TAG
+                    if not stack:
+                        # Error: Closing tag found, but stack is empty
+                        annotated_lines[line_idx] += f" <--- ORPHAN TAG: Found </{tag_name}> but no opening tag exists."
                     else:
-                        error['pointer'] = '^'
-                errors.append(error)
-        
-        # Sort errors by line number
-        errors.sort(key=lambda x: x['line'])
-        
-        return {
-            'is_valid': len(errors) == 0,
-            'error_count': len(errors),
-            'errors': errors
-        }
-    
-    def _collect_user_ids(self) -> Set[str]:
+                        top = stack[-1]
+                        if top['tag'] == tag_name:
+                            # Match found, valid pair
+                            stack.pop()
+                        else:
+                            # Error: Mismatch
+                            # We found a closing tag, but it doesn't match the most recent opening tag.
+                            annotated_lines[
+                                line_idx] += f" <--- MISMATCH: Expected </{top['tag']}>, found </{tag_name}>."
+
+                            # Logic Decision:
+                            # We do NOT pop the stack here. We assume the current closing tag is the error
+                            # and the previous opening tag still needs a mate later on.
+
+        # After processing all lines, check if the stack is not empty.
+        # These are tags that were opened but never closed.
+        while stack:
+            leftover = stack.pop()
+            # We go back to the line where this tag was opened and add the error there
+            idx = leftover['line_idx']
+            annotated_lines[idx] += f" <--- MISSING CLOSING TAG: Tag <{leftover['tag']}> is never closed."
+
+        # Join the lines back into a single string to be displayed in the UI text box
+        return "\n".join(annotated_lines)
+
+    def autocorrect(self):
         """
-        Helper method: Collect all user IDs from the XML for reference checking.
-        
-        Returns:
-            Set[str]: Set of all user IDs found in the XML
+        Attempts to fix the XML by balancing tags.
+        Returns the fixed XML string and updates self.xml_string.
         """
-        all_user_ids = set()
-        lines = self.xml_string.split('\n')
-        in_user = False
-        
-        for line in lines:
-            line = line.strip()
-            
-            if '<user>' in line:
-                in_user = True
-            elif '</user>' in line:
-                in_user = False
-            elif in_user and '<id>' in line:
-                match = re.search(r'<id>(.+?)</id>', line)
-                if match:
-                    all_user_ids.add(match.group(1).strip())
-        
-        return all_user_ids
+        stack = []
+        fixed_lines = []
+
+        # We need to parse slightly differently: we want to rebuild the string
+        # Regex to tokenize: Tag OR non-tag content
+        tokens = re.split(r'(<[^>]+>)', self.xml_string)
+
+        corrected_output = []
+
+        for token in tokens:
+            if not token:
+                continue
+
+            # Check if this token is a tag
+            match = re.match(r'<(/?)(\w+)[^>]*>', token)
+
+            if match:
+                is_closing = match.group(1) == '/'
+                tag_name = match.group(2)
+
+                if not is_closing:
+                    # OPENING TAG
+                    stack.append(tag_name)
+                    corrected_output.append(token)
+                else:
+                    # CLOSING TAG
+                    if stack and stack[-1] == tag_name:
+                        # Perfectly matches
+                        stack.pop()
+                        corrected_output.append(token)
+                    else:
+                        # MISMATCH SCENARIO
+                        # Strategy: If it matches a parent higher up, close the intermediates.
+                        # If it matches nothing, ignore it (delete stray closing tag).
+
+                        if tag_name in stack:
+                            # It is valid, but we forgot to close something in between
+                            # Example: <a> <b> </a> -> We need to close <b> first
+                            while stack[-1] != tag_name:
+                                missing_tag = stack.pop()
+                                corrected_output.append(f"</{missing_tag}>")
+
+                            # Now pop the matching tag
+                            stack.pop()
+                            corrected_output.append(token)
+                        else:
+                            # It's a stray closing tag that wasn't opened. Ignore/Delete it.
+                            pass
+            else:
+                # Just text content, append as is
+                corrected_output.append(token)
+
+        # Final cleanup: Close any tags left open at the end
+        while stack:
+            missing_tag = stack.pop()
+            corrected_output.append(f"</{missing_tag}>")
+
+        # Update the class attribute
+        self.xml_string = "".join(corrected_output)
+        return self.format()
