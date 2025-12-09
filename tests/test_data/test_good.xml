@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<social_network>
+    <metadata>
+        <version>1.0</version>
+        <description>Test data for validation success.</description>
+    </metadata>
+    <user id="u1">
+        <name>Alice</name>
+        <posts>
+            <post id="p1">
+                <topic>data</topic>
+                <content>XML is fun! It's a structured way to store data.</content>
+            </post>
+        </posts>
+        <followers>
+            <follower><id>u2</id></follower>
+        </followers>
+    </user>
+    <user id="u2">
+        <name>Bob</name>
+        <posts>
+            <post id="p2">
+                <topic>algorithms</topic>
+                <content>BFS is used to find the shortest path in a graph.</content>
+            </post>
+        </posts>
+        <followers>
+            <follower><id>u1</id></follower>
+        </followers>
+    </user>
+</social_network>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<network_data>
+    <metadata>
+        <version>1.0</version>
+    </metadata>
+    <user id="u1">
+        <name>Alice</name>
+    </user>
+    <user id="u2">
+        <name>Bob</name>
+    </user>
+    <user>
+        <name>Eve (Missing ID)</name>
+    </user>
+</network_data_ERROR>
