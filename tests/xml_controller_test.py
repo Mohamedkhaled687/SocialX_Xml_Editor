@@ -462,6 +462,16 @@ with open(minified_filename, 'w', encoding='utf-8') as f:
 
 print(f"\n✓ Minified XML written to '{minified_filename}'")
 
+# Export to JSON
+json_filename = "xml_to_json.json"
+success, message, error = controller_test.export_to_json(json_filename)
+
+print("\n" + "=" * 80)
+if success:
+    print(f"JSON EXPORT SUCCESS: {message}")
+else:
+    print(f"JSON EXPORT FAILED: {error}")
+print("=" * 80)
 # Standard Python idiom to run tests when script is executed directly
 if __name__ == '__main__': #Corrected from '_main_'
     # Run all test methods in this test case

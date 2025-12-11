@@ -444,22 +444,38 @@ class XMLController:
                     elif current_container == 'topic' and post_dict is not None:
                         post_dict["topics"].append(text_content)
                         
+                    # fix for elif current_container == 'id':
                     elif current_container == 'id':
-                        # this handles followers/followings ID tags
-                        # find the preceding tag to identify the parent
+                        text_content = token.strip()
+                        if not text_content:
+                            i += 1
+                            continue
+                            
+                        # --- Start of the fix: Find the Grandparent Tag ---
+                        
+                        # 1. Start searching backward from the text content's index (i)
                         k = i - 1
-                        while k >= 0 and not tokens[k].startswith('<'):
-                             k -= 1
+                        
+                        # 2. Backtrack past the text token's opening tag (which is <id>) to find its parent tag
+                        # This loop finds the opening <id> tag first
+                        while k >= 0 and not tokens[k].startswith('<'): 
+                            k -= 1
+                            
+                        # 3. Backtrack again to find the grandparent tag (which is <follower> or <following>)
+                        k -= 1 # Move past the <id> tag
+                        while k >= 0 and not tokens[k].startswith('<'): 
+                            k -= 1 # Skip any leftover text/whitespace tokens (shouldn't be many here)
                         
                         if k >= 0:
-                            prev_tag_name, _ = self._get_tag_info(tokens[k])
+                            grandparent_tag_name, _ = self._get_tag_info(tokens[k])
                             
-                            if prev_tag_name == 'follower' and user_dict is not None:
+                            if grandparent_tag_name == 'follower' and user_dict is not None:
                                 user_dict["followers"].append(text_content)
-                            elif prev_tag_name == 'following' and user_dict is not None:
+                            elif grandparent_tag_name == 'following' and user_dict is not None:
                                 user_dict["followings"].append(text_content)
-                    
-                    # proceed to the next token
+                                
+                        # --- End of the fix ---
+
                     current_container = None # reset container state after text processing
 
                 i += 1
