@@ -358,7 +358,12 @@ class XMLController:
 
         tokens = [ord(c) for c in self.xml_string]
         merges = []  # List to preserve order
-        next_token = 256
+        # Track the maximum original character code to ensure merged tokens
+        # never conflict with original characters. This prevents issues where
+        # a merged token value equals an original character code point (e.g., 'Ā' = 256).
+        # Merged tokens must be strictly greater than all original character codes.
+        max_original_char = max(tokens) if tokens else 0
+        next_token = max(256, max_original_char + 1)
 
         for _ in range(100):
             pair_counts = {}
@@ -381,7 +386,7 @@ class XMLController:
             # Merge pass
             new_tokens = []
             i = 0
-            while i < len(tokens):
+            while i < len(tokens):                                                                                                                                                                             
                 if i < len(tokens) - 1:
                     key = (tokens[i] << 16) | tokens[i + 1]
                     if key == most_key:
@@ -438,6 +443,10 @@ class XMLController:
         Returns:
             None. The result is stored in `self.xml_string`.
         """
+        if not compressed_string:
+            self.xml_string = ""
+            return
+
         data = bytearray(compressed_string.encode("latin-1"))
         offset = 0
 
