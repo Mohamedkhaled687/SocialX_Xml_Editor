@@ -47,6 +47,24 @@ class XMLController:
         """
         self.xml_string: str = xml
 
+
+    @staticmethod
+    def pack_u16(n):
+        return bytes([n & 255, (n >> 8) & 255])
+
+    @staticmethod
+    def pack_u32(n):
+        return bytes([n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >> 24) & 255])
+
+    @staticmethod
+    def unpack_u16(data, offset):
+        return data[offset] | (data[offset + 1] << 8)
+
+    @staticmethod
+    def unpack_u32(data, offset):
+        return (data[offset] | (data[offset + 1] << 8) |
+                (data[offset + 2] << 16) | (data[offset + 3] << 24))
+
     # ===================================================================
     # SECTION 1: HELPER METHODS (Setter, Getter, Tokenizer)
     # ===================================================================
@@ -329,3 +347,109 @@ class XMLController:
         # Update the class attribute
         self.xml_string = "".join(corrected_output)
         return self.format()
+
+    # ===================================================================
+    # SECTION 5: Compression and Decompression
+    # ===================================================================
+
+    def compress_to_string(self) -> str:
+        if not self.xml_string:
+            return ""
+
+        tokens = [ord(c) for c in self.xml_string]
+        merges = []  # List to preserve order
+        next_token = 256
+
+        for _ in range(100):
+            pair_counts = {}
+            for i in range(len(tokens) - 1):
+                key = (tokens[i] << 16) | tokens[i + 1]
+                pair_counts[key] = pair_counts.get(key, 0) + 1
+
+            if not pair_counts:
+                break
+
+            most_key = None
+            most_count = 0
+            for key, count in pair_counts.items():
+                if count > most_count:
+                    most_count = count
+                    most_key = key
+
+            if most_count < 2:
+                break
+
+            # Store with creation order
+            merges.append((most_key, next_token))
+
+            # Merge pass
+            new_tokens = []
+            i = 0
+            while i < len(tokens):
+                if i < len(tokens) - 1:
+                    key = (tokens[i] << 16) | tokens[i + 1]
+                    if key == most_key:
+                        new_tokens.append(next_token)
+                        i += 2
+                        continue
+                new_tokens.append(tokens[i])
+                i += 1
+
+            tokens = new_tokens
+            next_token += 1
+
+        # Serialize
+        out = bytearray()
+        out.extend(self.pack_u32(len(merges)))
+
+        for key, merged in merges:
+            t1 = (key >> 16) & 0xFFFF
+            t2 = key & 0xFFFF
+            out.extend(self.pack_u16(t1))
+            out.extend(self.pack_u16(t2))
+            out.extend(self.pack_u16(merged))
+
+        out.extend(self.pack_u32(len(tokens)))
+        for t in tokens:
+            out.extend(self.pack_u16(t))
+
+        return bytes([b if b < 256 else 63 for b in out]).decode("latin-1")
+
+    def decompress_from_string(self, compressed_string: str) -> None:
+        data = bytearray(compressed_string.encode("latin-1"))
+        offset = 0
+
+        merge_count = self.unpack_u32(data, offset)
+        offset += 4
+
+        # Store merges in creation order
+        merges = []
+        for _ in range(merge_count):
+            t1 = self.unpack_u16(data, offset)
+            offset += 2
+            t2 = self.unpack_u16(data, offset)
+            offset += 2
+            merged = self.unpack_u16(data, offset)
+            offset += 2
+            merges.append((merged, t1, t2))
+
+        token_count = self.unpack_u32(data, offset)
+        offset += 4
+
+        tokens = []
+        for _ in range(token_count):
+            tokens.append(self.unpack_u16(data, offset))
+            offset += 2
+
+        # Expand in REVERSE creation order
+        for merged_token, t1, t2 in reversed(merges):
+            new_tokens = []
+            for t in tokens:
+                if t == merged_token:
+                    new_tokens.append(t1)
+                    new_tokens.append(t2)
+                else:
+                    new_tokens.append(t)
+            tokens = new_tokens
+
+        self.xml_string = ''.join(chr(t) for t in tokens)
