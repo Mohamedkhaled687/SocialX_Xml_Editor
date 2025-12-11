@@ -374,8 +374,8 @@ class XMLController:
             # state variables for custom parsing
             user_dict = None
             post_dict = None
+            relationship_dict = None # NEW: state variable to temporarily hold a follower/following object before appending
             current_container = None # tracks if we are inside 'name', 'body', 'topic', ... etc.
-            
             i = 0
             while i < len(tokens):
                 token = tokens[i]
@@ -399,11 +399,11 @@ class XMLController:
                     elif tag_name == 'post' and user_dict is not None:
                         # start of a new post record
                         post_dict = {
-                            "id": attrs.get('id'),
                             "content": None,
                             "topics": []
                         }
-                    
+                    elif tag_name == 'follower' or tag_name == 'following': # NEW: If we start a relationship tag
+                        relationship_dict = {} # NEW: Initialize the object we need to build, e.g., {"id": "..."}
                     # set the current container tag (e.g., 'name', 'id' inside follower)
                     current_container = tag_name
 
@@ -422,7 +422,15 @@ class XMLController:
                         # end of post record, finalize and append
                         user_dict["posts"].append(post_dict)
                         post_dict = None
-                        
+
+                    elif tag_name == 'follower' and user_dict is not None and relationship_dict is not None: # NEW: When </follower> closes
+                        user_dict["followers"].append(relationship_dict) # NEW: Append the complete {"id": "X"} object to the list.
+                        relationship_dict = None # NEW: Reset the temporary relationship dict.
+
+                    elif tag_name == 'following' and user_dict is not None and relationship_dict is not None: # NEW: When </following> closes
+                        user_dict["followings"].append(relationship_dict) # NEW: Append the complete {"id": "X"} object to the list.
+                        relationship_dict = None # NEW: Reset the temporary relationship dict. 
+
                     current_container = None
 
                 # ---------------------------------------------------------------
@@ -446,35 +454,24 @@ class XMLController:
                         
                     # fix for elif current_container == 'id':
                     elif current_container == 'id':
-                        text_content = token.strip()
-                        if not text_content:
-                            i += 1
-                            continue
-                            
-                        # --- Start of the fix: Find the Grandparent Tag ---
-                        
-                        # 1. Start searching backward from the text content's index (i)
-                        k = i - 1
-                        
-                        # 2. Backtrack past the text token's opening tag (which is <id>) to find its parent tag
-                        # This loop finds the opening <id> tag first
+                        if relationship_dict is not None: # NEW: Check if we are inside a temporary object
+                            relationship_dict["id"] = text_content # NEW: Assigns the ID to the 'id' key of the temporary dictionary.
+                        # fix2 Find the Grandparent Tag 
+                        k = i - 1 
                         while k >= 0 and not tokens[k].startswith('<'): 
-                            k -= 1
-                            
-                        # 3. Backtrack again to find the grandparent tag (which is <follower> or <following>)
-                        k -= 1 # Move past the <id> tag
+                            k -= 1 # Finds <id> tag
+
+                        k -= 1 # Moves past <id> tag to look for grandparent
                         while k >= 0 and not tokens[k].startswith('<'): 
-                            k -= 1 # Skip any leftover text/whitespace tokens (shouldn't be many here)
-                        
+                            k -= 1 
+
                         if k >= 0:
                             grandparent_tag_name, _ = self._get_tag_info(tokens[k])
                             
-                            if grandparent_tag_name == 'follower' and user_dict is not None:
-                                user_dict["followers"].append(text_content)
-                            elif grandparent_tag_name == 'following' and user_dict is not None:
-                                user_dict["followings"].append(text_content)
-                                
-                        # --- End of the fix ---
+                            if grandparent_tag_name == 'user' and user_dict is not None:
+                                # NEW: Handle the primary ID for the user
+                                if user_dict["id"] is None: # Only assign if not already set by attribute
+                                    user_dict["id"] = text_content
 
                     current_container = None # reset container state after text processing
 

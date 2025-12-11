@@ -1,8 +1,3 @@
-"""
-Unit tests for the XMLController class.
-This test suite covers formatting, indentation, text wrapping, and minification.
-"""
-
 import tempfile
 import unittest
 import sys
@@ -195,29 +190,35 @@ class TestXMLController(unittest.TestCase):
         """
         # 1. Setup Mock XML Data
         mock_xml = """
-        <users>
-            <user id="u1">
-                <name>Alice</name>
-                <posts>
-                    <post id="p1">
-                        <body>First post content</body>
-                        <topics>
-                            <topic>tech</topic>
-                            <topic>ai</topic>
-                        </topics>
-                    </post>
-                </posts>
-                <followers>
-                    <follower><id>u2</id></follower>
-                </followers>
-            </user>
-            <user id="u2">
-                <name>Bob</name>
-                <posts/>
-            </user>
-        </users>
-        """
-        
+            <users>
+                <user>
+                    <id>1</id>
+                    <name>Alice</name>
+                    <posts>
+                        <post>
+                            <body>First post content</body>
+                            <topics>
+                                <topic>tech</topic>
+                                <topic>ai</topic>
+                            </topics>
+                        </post>
+                    </posts>
+                    <followers>
+                        <follower><id>2</id></follower>
+                    </followers>
+                    <followings>
+                        <following><id>3</id></following>
+                    </followings>
+                </user>
+                <user>
+                    <id>2</id>
+                    <name>Bob</name>
+                    <posts/>
+                    <followers/>
+                    <followings/>
+                </user>
+            </users>
+            """ 		
         # 2. Set XML string
         self.controller.set_xml_string(mock_xml)
         
@@ -248,24 +249,29 @@ class TestXMLController(unittest.TestCase):
         
         # B. Check User 1 data
         user1 = json_content['users'][0]
-        self.assertEqual(user1['id'], 'u1')
+        self.assertEqual(user1['id'], '1')
         self.assertEqual(user1['name'], 'Alice')
         self.assertEqual(len(user1['posts']), 1)
-        self.assertEqual(user1['followers'], ['u2'])
-        self.assertEqual(user1['followings'], [])
+        self.assertEqual(user1['followers'], [{'id': '2'}]) 
+        self.assertEqual(user1['followings'], [{'id': '3'}])
 
         # C. Check User 1 Post 1 data
         post1 = user1['posts'][0]
-        self.assertEqual(post1['id'], 'p1')
         self.assertEqual(post1['content'], 'First post content')
         self.assertEqual(post1['topics'], ['tech', 'ai'])
         
+        # *** FIX CONFIRMATION: Assert 'id' is NOT in the post object ***
+        self.assertNotIn('id', post1, "Post object should NOT contain an 'id' key.") 
+        # -------------------------------------------------------------
+        
         # D. Check User 2 data (Should handle empty posts/relations gracefully)
         user2 = json_content['users'][1]
-        self.assertEqual(user2['id'], 'u2')
+        self.assertEqual(user2['id'], '2')
         self.assertEqual(user2['name'], 'Bob')
         self.assertEqual(user2['posts'], [])
-        
+        self.assertEqual(user2['followers'], [])
+        self.assertEqual(user2['followings'], [])
+        # --------------------------------------
         # 8. Cleanup the temporary file
         os.remove(test_file_path)
         
