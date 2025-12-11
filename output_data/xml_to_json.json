@@ -1,11 +1,10 @@
 {
   "users": [
     {
-      "id": null,
+      "id": "1",
       "name": "Ahmed Ali",
       "posts": [
         {
-          "id": null,
           "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
           "topics": [
             "economy",
@@ -13,7 +12,6 @@
           ]
         },
         {
-          "id": null,
           "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
           "topics": [
             "sports",
@@ -21,7 +19,6 @@
           ]
         },
         {
-          "id": null,
           "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
           "topics": [
             "food",
@@ -30,20 +27,27 @@
         }
       ],
       "followers": [
-        "2",
-        "3"
+        {
+          "id": "2"
+        },
+        {
+          "id": "3"
+        }
       ],
       "followings": [
-        "2",
-        "3"
+        {
+          "id": "2"
+        },
+        {
+          "id": "3"
+        }
       ]
     },
     {
-      "id": null,
+      "id": "2",
       "name": "Yasser Ahmed",
       "posts": [
         {
-          "id": null,
           "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
           "topics": [
             "sports",
@@ -52,18 +56,21 @@
         }
       ],
       "followers": [
-        "1"
+        {
+          "id": "1"
+        }
       ],
       "followings": [
-        "1"
+        {
+          "id": "1"
+        }
       ]
     },
     {
-      "id": null,
+      "id": "3",
       "name": "Mohamed Sherif",
       "posts": [
         {
-          "id": null,
           "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
           "topics": [
             "sports"
@@ -71,18 +78,21 @@
         }
       ],
       "followers": [
-        "1"
+        {
+          "id": "1"
+        }
       ],
       "followings": [
-        "1"
+        {
+          "id": "1"
+        }
       ]
     },
     {
-      "id": null,
+      "id": "4",
       "name": "Fady Faragallah",
       "posts": [
         {
-          "id": null,
           "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
           "topics": [
             "Data",
@@ -91,12 +101,20 @@
         }
       ],
       "followers": [
-        "1",
-        "2",
-        "3"
+        {
+          "id": "1"
+        },
+        {
+          "id": "2"
+        },
+        {
+          "id": "3"
+        }
       ],
       "followings": [
-        "2"
+        {
+          "id": "2"
+        }
       ]
     }
   ]
