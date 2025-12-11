@@ -416,6 +416,29 @@ class XMLController:
         return bytes([b if b < 256 else 63 for b in out]).decode("latin-1")
 
     def decompress_from_string(self, compressed_string: str) -> None:
+        """
+        Decompresses a string produced by `compress_to_string` and updates `self.xml_string`.
+
+        This method reverses the compression process by expanding tokens using the stored
+        merge operations in reverse order. The input string should be in the format produced
+        by `compress_to_string`, which encodes merge operations and the compressed token stream
+        using a custom byte serialization and "latin-1" encoding.
+
+        Args:
+            compressed_string (str): The compressed string to decompress, as produced by
+                `compress_to_string`. It should be a "latin-1" encoded string representing
+                the serialized merge operations and token stream.
+
+        Algorithm:
+            1. Decodes the input string into a byte array.
+            2. Reads the number of merge operations and reconstructs the merge list.
+            3. Reads the compressed token stream.
+            4. Expands the tokens by applying the merges in reverse order.
+            5. Converts the final token list back into a string and assigns it to `self.xml_string`.
+
+        Returns:
+            None. The result is stored in `self.xml_string`.
+        """
         data = bytearray(compressed_string.encode("latin-1"))
         offset = 0
 
