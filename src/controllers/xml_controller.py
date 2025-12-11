@@ -376,6 +376,7 @@ class XMLController:
             post_dict = None
             relationship_dict = None # NEW: state variable to temporarily hold a follower/following object before appending
             current_container = None # tracks if we are inside 'name', 'body', 'topic', ... etc.
+            parent_stack = [] # Stack to track parent tag hierarchy for proper context
             i = 0
             while i < len(tokens):
                 token = tokens[i]
@@ -405,6 +406,8 @@ class XMLController:
                     elif tag_name == 'follower' or tag_name == 'following': # NEW: If we start a relationship tag
                         relationship_dict = {} # NEW: Initialize the object we need to build, e.g., {"id": "..."}
                     # set the current container tag (e.g., 'name', 'id' inside follower)
+                    # Push opening tag onto the parent stack
+                    parent_stack.append(tag_name)
                     current_container = tag_name
 
                 # ---------------------------------------------------------------
@@ -430,7 +433,9 @@ class XMLController:
                     elif tag_name == 'following' and user_dict is not None and relationship_dict is not None: # NEW: When </following> closes
                         user_dict["followings"].append(relationship_dict) # NEW: Append the complete {"id": "X"} object to the list.
                         relationship_dict = None # NEW: Reset the temporary relationship dict. 
-
+                    # Pop closing tag from the parent stack
+                    if parent_stack and parent_stack[-1] == tag_name:
+                        parent_stack.pop()
                     current_container = None
 
                 # ---------------------------------------------------------------
@@ -452,26 +457,19 @@ class XMLController:
                     elif current_container == 'topic' and post_dict is not None:
                         post_dict["topics"].append(text_content)
                         
-                    # fix for elif current_container == 'id':
+                    
                     elif current_container == 'id':
-                        if relationship_dict is not None: # NEW: Check if we are inside a temporary object
-                            relationship_dict["id"] = text_content # NEW: Assigns the ID to the 'id' key of the temporary dictionary.
-                        # fix2 Find the Grandparent Tag 
-                        k = i - 1 
-                        while k >= 0 and not tokens[k].startswith('<'): 
-                            k -= 1 # Finds <id> tag
+                                                # Use parent stack to determine the correct context
+                        # parent_stack[-1] is 'id', parent_stack[-2] is the parent tag
+                        parent_tag = parent_stack[-2] if len(parent_stack) >= 2 else None
 
-                        k -= 1 # Moves past <id> tag to look for grandparent
-                        while k >= 0 and not tokens[k].startswith('<'): 
-                            k -= 1 
-
-                        if k >= 0:
-                            grandparent_tag_name, _ = self._get_tag_info(tokens[k])
-                            
-                            if grandparent_tag_name == 'user' and user_dict is not None:
-                                # NEW: Handle the primary ID for the user
-                                if user_dict["id"] is None: # Only assign if not already set by attribute
-                                    user_dict["id"] = text_content
+                    if parent_tag in ('follower', 'following') and relationship_dict is not None:
+                            # ID inside a follower or following tag
+                            relationship_dict["id"] = text_content
+                    elif parent_tag == 'user' and user_dict is not None:
+                            # ID inside a user tag (but not inside a follower/following)
+                        if user_dict["id"] is None:  # Only assign if not already set by attribute
+                            user_dict["id"] = text_content
 
                     current_container = None # reset container state after text processing
 
