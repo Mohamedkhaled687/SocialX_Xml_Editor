@@ -6,6 +6,8 @@ import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QFont
 from src.ui import ManualWindow
+from src.ui import LandingWindow
+from src.ui import BrowseWindow
 
 
 class AppManager:
@@ -19,7 +21,6 @@ class AppManager:
         self.app.setFont(font)
 
         # Import here to avoid circular imports
-        from src.ui import LandingWindow
 
         self.landing_window = LandingWindow()
         self.manual_window = None
@@ -34,7 +35,6 @@ class AppManager:
 
     def show_browse_mode(self):
         """Show browse mode window."""
-        from src.ui import BrowseWindow
 
         if self.browse_window is None:
             self.browse_window = BrowseWindow()

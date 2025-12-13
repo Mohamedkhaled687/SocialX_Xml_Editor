@@ -1,9 +1,7 @@
 """
 Manual Mode Window - Load XML from manual input
 """
-from typing import Optional
 from PySide6.QtWidgets import QPushButton, QTextEdit, QMessageBox, QLabel, QVBoxLayout, QHBoxLayout, QWidget
-
 from .base_xml_window import BaseXMLWindow
 
 
@@ -66,25 +64,29 @@ class ManualWindow(BaseXMLWindow):
         """Return the initialization message."""
         return "Ready to load XML text."
 
-    def browse_file(self) -> None:
-        """Handle file browsing - not used in manual mode."""
-        pass
-
     def upload(self) -> None:
-        """Handle XML text upload and parsing."""
-        self.input_text = self.input_text_box.toPlainText()
+        """Handle XML text upload and parsing (manual input)."""
+        self.input_text = self.input_text_box.toPlainText().strip()
         if not self.input_text:
-            QMessageBox.warning(self, "No Data", "Please enter XML data first.")
+            QMessageBox.warning(
+                self,
+                "No Data",
+                "Please enter valid XML data first."
+            )
             return
 
-        self.xml_controller.xml_data = self.input_text
-        if self.data_controller:
-            self.data_controller.set_xml_data(self.xml_controller.get_xml_data())
-        if self.graph_controller:
-            self.graph_controller.set_xml_data(self.xml_controller.get_xml_data())
+        try:
+            self.xml_controller.set_xml_string(self.input_text)
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                "XML Error",
+                str(e)
+            )
+            return
 
         QMessageBox.information(
             self,
             "Success",
-            f"XML parsed successfully!\nData is ready for operations."
+            "XML data parsed successfully.\nData is ready for operations."
         )

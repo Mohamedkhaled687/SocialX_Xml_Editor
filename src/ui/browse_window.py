@@ -1,11 +1,9 @@
 """
 Browse Mode Window - Load XML from file browser
 """
-from typing import Optional
+import os
 from PySide6.QtWidgets import QPushButton, QLineEdit, QFileDialog, QMessageBox, QLabel, QVBoxLayout, QHBoxLayout, \
     QWidget
-from PySide6.QtCore import Qt
-import xml.etree.ElementTree as ET
 
 from .base_xml_window import BaseXMLWindow
 
@@ -76,32 +74,46 @@ class BrowseWindow(BaseXMLWindow):
         return "Ready to load XML file."
 
     def browse(self) -> None:
-        """Handle file browsing."""
+        """Handle file browsing with format validation."""
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select XML File",
             "",
             "XML Files (*.xml);;All Files (*)"
         )
-        if file_path:
-            if self.file_path_box:
-                self.file_path_box.setText(file_path)
+
+        if not file_path:
+            return  # User canceled dialog
+
+        # Validate extension
+        _, ext = os.path.splitext(file_path)
+        if ext.lower() != ".xml":
+            QMessageBox.warning(
+                self,
+                "Invalid File",
+                "Please select a valid XML (.xml) file.\n The selected " + ext.lower() + " extension is un acceptable"
+            )
+            return
+
+        if self.file_path_box:
+            self.file_path_box.setText(file_path)
 
     def upload(self) -> None:
-        """Handle file upload and parsing."""
         if not self.file_path_box.text():
             QMessageBox.warning(self, "No File", "Please select an XML file first.")
             return
 
-        file_path = self.file_path_box.text()
-        _,self.input_text = file_io.read_file(file_path)
-        QMessageBox.information(
-            self,
-            "Success",
-            f"File loaded successfully!\nData is ready for operations."
-        )
-        self.xml_controller.xml_data = ET.fromstring(self.input_text)
-        if self.data_controller:
-            self.data_controller.set_xml_data(self.xml_controller.get_xml_data())
-        if self.graph_controller:
-            self.graph_controller.set_xml_data(self.xml_controller.get_xml_data())
+        success, result = file_io.read_file(self.file_path_box.text())
+        if not success:
+            QMessageBox.critical(self, "Read Error", result)
+            return
+
+        try:
+            self.xml_controller.set_xml_string(result)
+        except Exception as e:
+            QMessageBox.warning(self, "XML Error", str(e))
+            return
+
+        self.input_text = result
+        QMessageBox.information(self, "Success", "XML file loaded successfully.")
+
