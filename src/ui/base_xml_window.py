@@ -8,14 +8,15 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PySide6.QtCore import Qt, Signal, QSize
 
 # Controller imports
-from ..controllers import XMLController, DataController, GraphController
+from ..controllers import XMLController
+# from ..controllers import DataController, GraphController  # TODO: Implement these controllers if needed
 
 # UI window imports
 from .code_viewer_window import CodeViewerWindow
-from .graph_visualization_window import GraphVisualizationWindow
+# from .graph_visualization_window import GraphVisualizationWindow  # TODO: Implement if needed
 
 # utilities imports
-from ..utilities import file_io
+from ..utils import file_io
 
 # Parent Imports
 from abc import abstractmethod
@@ -30,8 +31,8 @@ class BaseXMLWindow(QMainWindow):
 
         # Initialize controllers
         self.xml_controller: XMLController = XMLController()
-        self.data_controller: DataController = DataController()
-        self.graph_controller: GraphController = GraphController()
+        # self.data_controller: DataController = DataController()  # TODO: Implement DataController
+        # self.graph_controller: GraphController = GraphController()  # TODO: Implement GraphController
 
         self.input_text: str = ""
         self.output_text: str = ""

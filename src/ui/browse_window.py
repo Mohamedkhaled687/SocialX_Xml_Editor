@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from .base_xml_window import BaseXMLWindow
 
 # Utilities imports
-from ..utilities import file_io
+from ..utils import file_io
 
 
 class BrowseWindow(BaseXMLWindow):
