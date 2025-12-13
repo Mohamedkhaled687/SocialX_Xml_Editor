@@ -17,9 +17,8 @@ Date: [Date]
 
 import textwrap
 import re
-import json
-from typing import List, Tuple, Optional
-# from utilities.binary_utils import ByteUtils
+from typing import List, Tuple, Optional, Any
+from ..utils.binary_utils import ByteUtils
 
 
 class XMLController:
@@ -363,7 +362,7 @@ class XMLController:
     # SECTION 5: JSON EXPORT METHOD
     # ===================================================================
 
-    def export_to_json(self, file_path: str) -> Tuple[bool, str, Optional[str]]:
+    def export_to_json(self) -> Tuple[bool, str, Optional[dict[str,Any]] | None]:
         """
         Export XML data to JSON format and save it to a file.
 
@@ -375,7 +374,7 @@ class XMLController:
             tuple: (success: bool, message: str, error: str)
         """
         if self.xml_string is None:
-            return False, "", "No data loaded. Please set a valid XML file first."
+            return False, "No data loaded. Please set a valid XML file first.", None
 
         try:
             tokens = self._get_tokens()
@@ -491,14 +490,10 @@ class XMLController:
             # final check
             final_user_count = len(json_data["users"])
 
-            # handle file I/O
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(json_data, f, indent=2, ensure_ascii=False)
-
-            return True, f"Successfully exported {final_user_count} users to JSON. File saved: {file_path}", None
+            return True, f"Successfully exported {final_user_count} users to JSON", json_data
 
         except Exception as e:
-            return False, "", f"Failed to export to JSON using custom parser: {str(e)}"
+            return False, f"Failed to export to JSON using custom parser: {str(e)}" , None
 
     # ===================================================================
     # SECTION 6: Compression and Decompression
@@ -567,8 +562,11 @@ class XMLController:
 
         return bytes([b if b < 256 else 63 for b in out]).decode("latin-1")
 
-    def decompress_from_string(self, compressed_string: str) -> None:
-        data = bytearray(compressed_string.encode("latin-1"))
+    def decompress_from_string(self, compressed_string: str = None) -> str:
+        if compressed_string is not None:
+            data = bytearray(compressed_string.encode("latin-1"))
+        else:
+            data = bytearray(self.xml_string.encode("latin-1"))
         offset = 0
         try:
             # Check for at least 4 bytes for merge_count
@@ -615,5 +613,6 @@ class XMLController:
                 tokens = new_tokens
 
             self.xml_string = ''.join(chr(t) for t in tokens)
+            return self.xml_string
         except Exception as e:
             raise ValueError(f"Failed to decompress string: {e}")
