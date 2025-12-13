@@ -1,11 +1,8 @@
-"""
-Unit tests for the XMLController class.
-This test suite covers formatting, indentation, text wrapping, and minification.
-"""
-
+import tempfile
 import unittest
 import sys
 import os
+import json
 
 # Add parent directory to system path to allow imports from src folder
 # This is necessary when tests are in a separate directory from source code
@@ -186,7 +183,302 @@ class TestXMLController(unittest.TestCase):
         expected_fragment = "    <child>Text</child>"
         self.assertIn(expected_fragment, formatted)
 
+    def test_export_to_json(self):
+        """
+        Test the export_to_json method for correct data transformation
+        and file creation using a temporary file.
+        """
+        # 1. Setup Mock XML Data
+        mock_xml = """
+            <users>
+                <user>
+                    <id>1</id>
+                    <name>Alice</name>
+                    <posts>
+                        <post>
+                            <body>First post content</body>
+                            <topics>
+                                <topic>tech</topic>
+                                <topic>ai</topic>
+                            </topics>
+                        </post>
+                    </posts>
+                    <followers>
+                        <follower><id>2</id></follower>
+                    </followers>
+                    <followings>
+                        <following><id>3</id></following>
+                    </followings>
+                </user>
+                <user>
+                    <id>2</id>
+                    <name>Bob</name>
+                    <posts/>
+                    <followers/>
+                    <followings/>
+                </user>
+            </users>
+            """ 		
+        # 2. Set XML string
+        self.controller.set_xml_string(mock_xml)
+        
+        # 3. Use a temporary file path
+        # This creates a file path in the system's temp directory
+        with tempfile.NamedTemporaryFile(mode='r', delete=False, suffix='.json') as tmp:
+            test_file_path = tmp.name
+        
+        # 4. Execute the method
+        # We ensure the custom-coded '_get_tag_info' is defined and called.
+        success, message, error = self.controller.export_to_json(test_file_path)
+
+        # 5. Assertions (Verify the result)
+        self.assertTrue(success, f"JSON export failed. Message: {message}, Error: {error}")
+        self.assertIn("exported 2 users", message)
+
+        # 6. Read the content of the exported file
+        try:
+            with open(test_file_path, 'r', encoding='utf-8') as f:
+                json_content = json.load(f)
+        except Exception as e:
+            self.fail(f"Failed to read or parse exported JSON file: {e}")
+            
+        # 7. Verify JSON Structure and Content
+        
+        # A. Check total user count
+        self.assertEqual(len(json_content.get('users', [])), 2)
+        
+        # B. Check User 1 data
+        user1 = json_content['users'][0]
+        self.assertEqual(user1['id'], '1')
+        self.assertEqual(user1['name'], 'Alice')
+        self.assertEqual(len(user1['posts']), 1)
+        self.assertEqual(user1['followers'], [{'id': '2'}]) 
+        self.assertEqual(user1['followings'], [{'id': '3'}])
+
+        # C. Check User 1 Post 1 data
+        post1 = user1['posts'][0]
+        self.assertEqual(post1['content'], 'First post content')
+        self.assertEqual(post1['topics'], ['tech', 'ai'])
+        
+        # *** FIX CONFIRMATION: Assert 'id' is NOT in the post object ***
+        self.assertNotIn('id', post1, "Post object should NOT contain an 'id' key.") 
+        # -------------------------------------------------------------
+        
+        # D. Check User 2 data (Should handle empty posts/relations gracefully)
+        user2 = json_content['users'][1]
+        self.assertEqual(user2['id'], '2')
+        self.assertEqual(user2['name'], 'Bob')
+        self.assertEqual(user2['posts'], [])
+        self.assertEqual(user2['followers'], [])
+        self.assertEqual(user2['followings'], [])
+        # --------------------------------------
+        # 8. Cleanup the temporary file
+        os.remove(test_file_path)
+        
+xml_test = """
+<?xml version="1.0" encoding="UTF-8"?>
+<users>
+    <user>
+        <id>1</id>
+        <name>Ahmed Ali</name>
+        <posts>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        economy
+                    </topic>
+                    <topic>
+                        finance
+                    </topic>
+                </topics>
+            </post>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        sports
+                    </topic>
+                    <topic>
+                        history
+                    </topic>
+                </topics>
+            </post>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        food
+                    </topic>
+                    <topic>
+                        health
+                    </topic>
+                </topics>
+            </post>
+        </posts>
+        <followers>
+            <follower>
+                <id>2</id>
+            </follower>
+            <follower>
+                <id>3</id>
+            </follower>
+        </followers>
+        <followings>
+            <following>
+                <id>2</id>
+            </following>
+            <following>
+                <id>3</id>
+            </following>
+        </followings>
+    </user>
+    <user>
+        <id>2</id>
+        <name>Yasser Ahmed</name>
+        <posts>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        sports
+                    </topic>
+                    <topic>
+                        health
+                    </topic>
+                </topics>
+            </post>
+        </posts>
+        <followers>
+            <follower>
+                <id>1</id>
+            </follower>
+        </followers>
+        <followings>
+            <following>
+                <id>1</id>
+            </following>
+        </followings>
+    </user>
+    <user>
+        <id>3</id>
+        <name>Mohamed Sherif</name>
+        <posts>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        sports
+                    </topic>
+                </topics>
+            </post>
+        </posts>
+        <followers>
+            <follower>
+                <id>1</id>
+            </follower>
+        </followers>
+        <followings>
+            <following>
+                <id>1</id>
+            </following>
+        </followings>
+    </user>
+    <user>
+        <id>4</id>
+        <name>Fady Faragallah</name>
+        <posts>
+            <post>
+                <body>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                </body>
+                <topics>
+                    <topic>
+                        Data
+                    </topic>
+                    <topic>
+                        Software Engineering
+                    </topic>
+                </topics>
+            </post>
+        </posts>
+        <followers>
+            <follower>
+                <id>1</id>
+            </follower>
+            <follower>
+                <id>2</id>
+            </follower>
+            <follower>
+                <id>3</id>
+            </follower>
+        </followers>
+        <followings>
+            <following>
+                <id>2</id>
+            </following>
+    </user>
+        </followings>
+"""
+
+# Create controller instance
+controller_test = XMLController(xml_test)
+
+print("=" * 80)
+print("VALIDATION REPORT (BEFORE CORRECTION)")
+print("=" * 80)
+print(controller_test.validate())
+
+print("\n" + "=" * 80)
+print("AUTO-CORRECTING XML...")
+print("=" * 80)
+
+# Auto-correct the XML (this returns the formatted corrected XML)
+corrected_formatted_xml = controller_test.autocorrect()
+
+print("\n✓ Auto-correction completed!")
+
+# Write corrected and formatted XML to file
+formatted_filename = "corrected_formatted.xml"
+with open(formatted_filename, 'w', encoding='utf-8') as f:
+    f.write(corrected_formatted_xml)
+
+print(f"✓ Corrected and formatted XML written to '{formatted_filename}'")
+
+print("\n" + "=" * 80)
+print("VALIDATION REPORT (AFTER CORRECTION)")
+print("=" * 80)
+print(controller_test.validate())
+
+# Also write the minified version
+minified_xml = controller_test.minify()
+minified_filename = "corrected_minified.xml"
+with open(minified_filename, 'w', encoding='utf-8') as f:
+    f.write(minified_xml)
+
+print(f"\n✓ Minified XML written to '{minified_filename}'")
+
+# Export to JSON
+json_filename = "xml_to_json.json"
+success, message, error = controller_test.export_to_json(json_filename)
+
+print("\n" + "=" * 80)
+if success:
+    print(f"JSON EXPORT SUCCESS: {message}")
+else:
+    print(f"JSON EXPORT FAILED: {error}")
+print("=" * 80)
 # Standard Python idiom to run tests when script is executed directly
-if __name__ == '__main__':
+if __name__ == '__main__': #Corrected from '_main_'
     # Run all test methods in this test case
-    unittest.main()
+   unittest.main()
