@@ -2,7 +2,6 @@
 Graph Controller - Handles graph building and network analysis operations.
 """
 
-import xml.etree.ElementTree as ET
 from typing import Optional, Tuple, Dict, List
 import networkx as nx
 import numpy as np
