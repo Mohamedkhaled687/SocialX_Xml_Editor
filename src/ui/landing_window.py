@@ -208,7 +208,7 @@ class LandingWindow(QMainWindow):
         card_layout.addWidget(icon_container)
 
         # Question text
-        question = QLabel("<Welcome> select mode to provide the XML data </Welcome>")
+        question = QLabel("<Welcome> Select mode to provide the XML Data </Welcome>")
 
         question.setAlignment(Qt.AlignCenter)
         question.setStyleSheet("""
@@ -283,7 +283,7 @@ class LandingWindow(QMainWindow):
         card_layout.addWidget(button_container)
 
         # Version label
-        version = QLabel("Version 1.X.X")
+        version = QLabel("Version 1.0.0")
         version.setAlignment(Qt.AlignCenter)
         version.setStyleSheet("""
             QLabel {
