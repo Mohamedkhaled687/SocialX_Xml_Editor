@@ -50,7 +50,8 @@ if args.command == 'verify':
 
     if file_io.read_file(args.input)[0]:
         editor.set_xml_string(file_io.read_file(args.input)[1])
-        editor.set_xml_string(editor.validate())
+        annotated_xml, error_counts = editor.validate()
+        editor.set_xml_string(annotated_xml)
         ack = editor.format()
         if args.output is not None:
             file_io.write_file(args.output, ack)
