@@ -46,7 +46,7 @@ class XMLController:
         Example:
             controller = XMLController("<root><child>text</child></root>")
         """
-        self.xml_string: str = xml
+        self.xml_string: str = xml if xml is not None else ""
         self.xml_data: Optional[None] = None  # placeholder for parsed XML data structure,avoid attributes error
         if xml: self.set_xml_string(xml)  # initialize with provided XML
 
@@ -54,7 +54,7 @@ class XMLController:
     # SECTION 1: HELPER METHODS (Setter, Getter, Tokenizer)
     # ===================================================================
 
-    def set_xml_string(self, xml_string: str):
+    def set_xml_string(self, xml_string: str) -> None:
         """
         Set or update the XML string to be processed.
 
@@ -79,7 +79,7 @@ class XMLController:
         """
         return self.xml_string
 
-    def _get_tokens(self) -> List:
+    def _get_tokens(self) -> List[str]:
         """
         Parse a raw XML string into a structured list of tokens.
 
@@ -89,7 +89,7 @@ class XMLController:
         - Text content: the text between tags
 
         Returns:
-            List: A list of tokens extracted from the XML
+            List[str]: A list of tokens extracted from the XML
 
         Example:
             Input:  "<user><name>Ali</name></user>"
@@ -127,9 +127,15 @@ class XMLController:
 
         return tokens
 
-    def _get_tag_info(self, token: str) -> Tuple[str, dict]:
+    def _get_tag_info(self, token: str) -> Tuple[str, Dict[str, str]]:
         """
         Custom parser helper to extract tag name and attributes from a token.
+        
+        Args:
+            token (str): XML tag token to parse
+            
+        Returns:
+            Tuple[str, Dict[str, str]]: Tag name and dictionary of attributes
         """
         tag_content = token.strip('<>').strip('/')  # remove angle brackets and slashes
 
@@ -227,13 +233,16 @@ class XMLController:
     # ===================================================================
 
 
-    def validate(self):
+    def validate(self) -> str:
         """
         Parses self.xml_string, detects structural errors, and returns a new string
         where errors are annotated with '<---' at the end of the problematic lines.
 
         note: detect the structural errors of the xml file format and doesn't handle efficiently the data errors
         (spelling mistakes choose a tag name that may not be the correct one to be chosen)
+        
+        Returns:
+            str: XML string with error annotations
         """
         stack = []
 
@@ -289,13 +298,16 @@ class XMLController:
         # Join the lines back into a single string to be displayed in the UI text box
         return "\n".join(annotated_lines)
 
-    def autocorrect(self):
+    def autocorrect(self) -> str:
         """
         Attempts to fix the XML by balancing tags.
         Returns the fixed XML string and updates self.xml_string.
 
         note: correct the structural errors of the xml file format and doesn't handle efficiently the data errors
         (spelling mistakes choose a tag name that may not be the correct one to be chosen)
+        
+        Returns:
+            str: Fixed and formatted XML string
         """
         stack = []
         fixed_lines = []
@@ -549,7 +561,7 @@ class XMLController:
 
         return bytes([b if b < 256 else 63 for b in out]).decode("latin-1")
 
-    def decompress_from_string(self, compressed_string: str = None) -> str:
+    def decompress_from_string(self, compressed_string: Optional[str] = None) -> str:
         data = bytearray(compressed_string.encode("latin-1"))
         offset = 0
         try:
