@@ -17,7 +17,7 @@ Date: [Date]
 
 import textwrap
 import re
-from typing import List, Tuple, Optional, Any
+from typing import List, Tuple, Optional, Any, Dict
 from ..utils.binary_utils import ByteUtils
 
 
@@ -362,138 +362,125 @@ class XMLController:
     # SECTION 5: JSON EXPORT METHOD
     # ===================================================================
 
-    def export_to_json(self) -> Tuple[bool, str, Optional[dict[str,Any]] | None]:
+    def export_to_json(self) -> dict[str, list[Any]]:
         """
         Export XML data to JSON format and save it to a file.
-
-
-        Args:
-            file_path: Path to save the JSON file
 
         Returns:
             tuple: (success: bool, message: str, error: str)
         """
-        if self.xml_string is None:
-            return False, "No data loaded. Please set a valid XML file first.", None
 
-        try:
-            tokens = self._get_tokens()
-            json_data = {"users": []}
+        tokens = self._get_tokens()
+        json_data = {"users": []}
 
-            # state variables for custom parsing
-            user_dict = None
-            post_dict = None
-            relationship_dict = None  # NEW: state variable to temporarily hold a follower/following object before appending
-            current_container = None  # tracks if we are inside 'name', 'body', 'topic', ... etc.
-            parent_stack = []  # Stack to track parent tag hierarchy for proper context
-            i = 0
-            while i < len(tokens):
-                token = tokens[i]
+        # state variables for custom parsing
+        user_dict = None
+        post_dict = None
+        relationship_dict = None  # NEW: state variable to temporarily hold a follower/following object before appending
+        current_container = None  # tracks if we are inside 'name', 'body', 'topic', ... etc.
+        parent_stack = []  # Stack to track parent tag hierarchy for proper context
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
 
-                # ---------------------------------------------------------------
-                # CASE A: Opening Tag (e.g., <user>, <name>)
-                # ---------------------------------------------------------------
-                if token.startswith('<') and not token.startswith('</'):
-                    tag_name, attrs = self._get_tag_info(token)
+            # ---------------------------------------------------------------
+            # CASE A: Opening Tag (e.g., <user>, <name>)
+            # ---------------------------------------------------------------
+            if token.startswith('<') and not token.startswith('</'):
+                tag_name, attrs = self._get_tag_info(token)
 
-                    if tag_name == 'user':
-                        # start of a new user record
-                        user_dict = {
-                            "id": attrs.get('id'),  # extract ID from attribute
-                            "name": None,
-                            "posts": [],
-                            "followers": [],
-                            "followings": []
-                        }
+                if tag_name == 'user':
+                    # start of a new user record
+                    user_dict = {
+                        "id": attrs.get('id'),  # extract ID from attribute
+                        "name": None,
+                        "posts": [],
+                        "followers": [],
+                        "followings": []
+                    }
 
-                    elif tag_name == 'post' and user_dict is not None:
-                        # start of a new post record
-                        post_dict = {
-                            "content": None,
-                            "topics": []
-                        }
-                    elif tag_name == 'follower' or tag_name == 'following':  # NEW: If we start a relationship tag
-                        relationship_dict = {}  # NEW: Initialize the object we need to build, e.g., {"id": "..."}
-                    # set the current container tag (e.g., 'name', 'id' inside follower)
-                    # Push opening tag onto the parent stack
-                    parent_stack.append(tag_name)
-                    current_container = tag_name
+                elif tag_name == 'post' and user_dict is not None:
+                    # start of a new post record
+                    post_dict = {
+                        "content": None,
+                        "topics": []
+                    }
+                elif tag_name == 'follower' or tag_name == 'following':  # NEW: If we start a relationship tag
+                    relationship_dict = {}  # NEW: Initialize the object we need to build, e.g., {"id": "..."}
+                parent_stack.append(tag_name)
+                current_container = tag_name
 
-                # ---------------------------------------------------------------
-                # CASE B: Closing Tag (e.g., </user>, </name>)
-                # ---------------------------------------------------------------
-                elif token.startswith('</'):
-                    tag_name, _ = self._get_tag_info(token)
+            # ---------------------------------------------------------------
+            # CASE B: Closing Tag (e.g., </user>, </name>)
+            # ---------------------------------------------------------------
+            elif token.startswith('</'):
+                tag_name, _ = self._get_tag_info(token)
 
-                    if tag_name == 'user' and user_dict is not None:
-                        # end of user record, finalize and append
-                        json_data["users"].append(user_dict)
-                        user_dict = None
+                if tag_name == 'user' and user_dict is not None:
+                    # end of user record, finalize and append
+                    json_data["users"].append(user_dict)
+                    user_dict = None
 
-                    elif tag_name == 'post' and user_dict is not None and post_dict is not None:
-                        # end of post record, finalize and append
-                        user_dict["posts"].append(post_dict)
-                        post_dict = None
+                elif tag_name == 'post' and user_dict is not None and post_dict is not None:
+                    # end of post record, finalize and append
+                    user_dict["posts"].append(post_dict)
+                    post_dict = None
 
-                    elif tag_name == 'follower' and user_dict is not None and relationship_dict is not None:  # NEW: When </follower> closes
-                        user_dict["followers"].append(
-                            relationship_dict)  # NEW: Append the complete {"id": "X"} object to the list.
-                        relationship_dict = None  # NEW: Reset the temporary relationship dict.
+                elif tag_name == 'follower' and user_dict is not None and relationship_dict is not None:  # NEW: When </follower> closes
+                    user_dict["followers"].append(
+                        relationship_dict)  # NEW: Append the complete {"id": "X"} object to the list.
+                    relationship_dict = None  # NEW: Reset the temporary relationship dict.
 
-                    elif tag_name == 'following' and user_dict is not None and relationship_dict is not None:  # NEW: When </following> closes
-                        user_dict["followings"].append(
-                            relationship_dict)  # NEW: Append the complete {"id": "X"} object to the list.
-                        relationship_dict = None  # NEW: Reset the temporary relationship dict.
-                    # Pop closing tag from the parent stack
-                    if parent_stack and parent_stack[-1] == tag_name:
-                        parent_stack.pop()
-                    current_container = None
+                elif tag_name == 'following' and user_dict is not None and relationship_dict is not None:  # NEW: When </following> closes
+                    user_dict["followings"].append(
+                        relationship_dict)  # NEW: Append the complete {"id": "X"} object to the list.
+                    relationship_dict = None  # NEW: Reset the temporary relationship dict.
+                # Pop closing tag from the parent stack
+                if parent_stack and parent_stack[-1] == tag_name:
+                    parent_stack.pop()
+                current_container = None
 
-                # ---------------------------------------------------------------
-                # CASE C: Text Content
-                # ---------------------------------------------------------------
-                else:
-                    text_content = token.strip()
-                    if not text_content:
-                        i += 1
-                        continue
+            # ---------------------------------------------------------------
+            # CASE C: Text Content
+            # ---------------------------------------------------------------
+            else:
+                text_content = token.strip()
+                if not text_content:
+                    i += 1
+                    continue
 
-                    # assign content based on the most recently opened relevant tag
-                    if current_container == 'name' and user_dict is not None and user_dict["name"] is None:
-                        user_dict["name"] = text_content
+                # assign content based on the most recently opened relevant tag
+                if current_container == 'name' and user_dict is not None and user_dict["name"] is None:
+                    user_dict["name"] = text_content
 
-                    elif (current_container == 'body' or current_container == 'content') and post_dict is not None and \
-                            post_dict["content"] is None:
-                        post_dict["content"] = text_content
+                elif (current_container == 'body' or current_container == 'content') and post_dict is not None and \
+                        post_dict["content"] is None:
+                    post_dict["content"] = text_content
 
-                    elif current_container == 'topic' and post_dict is not None:
-                        post_dict["topics"].append(text_content)
+                elif current_container == 'topic' and post_dict is not None:
+                    post_dict["topics"].append(text_content)
 
+                elif current_container == 'id':
+                    # Use parent stack to determine the correct context
+                    # parent_stack[-1] is 'id', parent_stack[-2] is the parent tag
+                    parent_tag = parent_stack[-2] if len(parent_stack) >= 2 else None
 
-                    elif current_container == 'id':
-                        # Use parent stack to determine the correct context
-                        # parent_stack[-1] is 'id', parent_stack[-2] is the parent tag
-                        parent_tag = parent_stack[-2] if len(parent_stack) >= 2 else None
+                if parent_tag in ('follower', 'following') and relationship_dict is not None:
+                    # ID inside a follower or following tag
+                    relationship_dict["id"] = text_content
+                elif parent_tag == 'user' and user_dict is not None:
+                    # ID inside a user tag (but not inside a follower/following)
+                    if user_dict["id"] is None:  # Only assign if not already set by attribute
+                        user_dict["id"] = text_content
 
-                    if parent_tag in ('follower', 'following') and relationship_dict is not None:
-                        # ID inside a follower or following tag
-                        relationship_dict["id"] = text_content
-                    elif parent_tag == 'user' and user_dict is not None:
-                        # ID inside a user tag (but not inside a follower/following)
-                        if user_dict["id"] is None:  # Only assign if not already set by attribute
-                            user_dict["id"] = text_content
+                current_container = None  # reset container state after text processing
 
-                    current_container = None  # reset container state after text processing
+            i += 1
 
-                i += 1
+        # final check
+        final_user_count = len(json_data["users"])
 
-            # final check
-            final_user_count = len(json_data["users"])
-
-            return True, f"Successfully exported {final_user_count} users to JSON", json_data
-
-        except Exception as e:
-            return False, f"Failed to export to JSON using custom parser: {str(e)}" , None
+        return json_data
 
     # ===================================================================
     # SECTION 6: Compression and Decompression
@@ -563,10 +550,7 @@ class XMLController:
         return bytes([b if b < 256 else 63 for b in out]).decode("latin-1")
 
     def decompress_from_string(self, compressed_string: str = None) -> str:
-        if compressed_string is not None:
-            data = bytearray(compressed_string.encode("latin-1"))
-        else:
-            data = bytearray(self.xml_string.encode("latin-1"))
+        data = bytearray(compressed_string.encode("latin-1"))
         offset = 0
         try:
             # Check for at least 4 bytes for merge_count
