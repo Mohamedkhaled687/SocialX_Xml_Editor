@@ -671,37 +671,47 @@ class XMLController:
             raise ValueError(f"{e}")
 
     def search_in_posts(self,
-                       word: Optional[str] = None,
-                       topic: Optional[str] = None
-                       ) -> Optional[List[str]]:
+                        word: Optional[str] = None,
+                        topic: Optional[str] = None
+                        ) -> Optional[List[str]]:
         """
-        searching ability in the post for a topic or a word
-        :param word: string word to search for in all posts
-        :param topic: string topic to search for in all posts
-        :return: List[str], posts that has the word or the topic written in them
-        when error: returns None
+        Searching ability in the post for a topic or a word.
         """
         if (word is None and topic is None) or (word is not None and topic is not None):
             return None
-
-        if self.xml_string and self.xml_data is None:
+        if hasattr(self, 'xml_string') and self.xml_data is None:
             self.xml_data = XMLTree.fromstring(self.xml_string)
+
+        if not self.xml_data:
+            return None
 
         result = []
         users = self.xml_data.findall('.//user')
+
         for user in users:
-            for post_elem in user.findall('.//post'):
+            name_node = user.find('name')
+            user_name = name_node.text.strip() if (name_node and name_node.text) else "Unknown User"
+
+            posts = user.findall('.//post')
+            for post_elem in posts:
+                found = False
+                body_node = post_elem.find('body')
+                body_text = body_node.text if (body_node and body_node.text) else ""
                 if word is not None:
-                     if post_elem.text:
-                        ack = post_elem.find('body').text.find(word)
-                        if ack > 0:
-                            result.append(f"in user: {user.find('name').text.strip()}'s. found relevant post: {post_elem.find('body').text.strip()}")
-                if topic is not None:
-                    for topic_elem in post_elem.findall('.//topics/topic'):
-                        if topic_elem is not None and topic_elem.text:
-                            ack = topic_elem.text.find(topic)
-                            if ack > 0:
-                                result.append(f"in user: {user.find('name').text.strip()}'s. found relevant post: {post_elem.find('body').text.strip()}")
+                    if word.lower() in body_text.lower():
+                        found = True
+
+                elif topic is not None:
+
+                    topic_elements = post_elem.findall('.//topic')
+                    for topic_elem in topic_elements:
+                        if topic_elem.text and topic.lower() in topic_elem.text.lower():
+                            found = True
+                            break
+
+                if found:
+                    clean_body = body_text.strip().replace('\n', ' ')
+                    result.append(f"in user: {user_name}'s. found relevant post: {clean_body}")
 
         if len(result) == 0:
             result.append("found no relevant posts in any user's posts")
