@@ -160,7 +160,7 @@ class GraphVisualizationWindow(QWidget):
 
     def setup_ui(self):
         """Set up the user interface."""
-        self.setWindowTitle("Social Network Graph Visualization - Advanced")
+        self.setWindowTitle("SocialX Graph Visualization - Advanced")
         self.resize(self.main_window_size)
 
         main_layout = QHBoxLayout(self)
@@ -206,7 +206,7 @@ class GraphVisualizationWindow(QWidget):
         title_layout.setContentsMargins(20, 10, 20, 10)
 
         # Title and info
-        title_label = QLabel("🔗 Social Network Graph Visualization")
+        title_label = QLabel("🔗 SocialX Graph Visualization")
         title_label.setStyleSheet("""
             background-color: transparent;
             color: white;
@@ -866,7 +866,7 @@ class GraphVisualizationWindow(QWidget):
         
         # Set title
         ax.set_title(
-            f"Social Network Graph - {self.current_layout.replace('_', ' ').title()} Layout\n"
+            f"SocialX Graph - {self.current_layout.replace('_', ' ').title()} Layout\n"
             f"({self.graph.number_of_nodes()} users, {self.graph.number_of_edges()} connections)",
             fontsize=14,
             fontweight='bold',
@@ -887,7 +887,7 @@ class GraphVisualizationWindow(QWidget):
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save Graph Image",
-            "social_network_graph.png",
+            "socialx_graph.png",
             "PNG Image (*.png);;JPEG Image (*.jpg);;PDF Document (*.pdf);;SVG Image (*.svg)"
         )
         

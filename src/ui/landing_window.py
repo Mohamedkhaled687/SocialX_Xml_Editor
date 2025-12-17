@@ -217,7 +217,7 @@ class LandingWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("🌐 SocialNet XML Data Editor")
+        self.setWindowTitle("🌐 SocialX XML Data Editor")
         self.setMinimumSize(1200, 700)
 
         # Create central widget
@@ -261,7 +261,7 @@ class LandingWindow(QMainWindow):
         card_layout.setContentsMargins(50, 50, 50, 50)
 
         # Title
-        title = QLabel("SocialNet XML Data Editor")
+        title = QLabel("SocialX XML Data Editor")
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("""
             QLabel {

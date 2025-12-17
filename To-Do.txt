@@ -1,5 +1,4 @@
 * resolve compress and decompress conflicts (with error pop window).
-* implement the project manager (project kickoff point before CLI & UI).
 * implement the search feature with the same scheme of the project controllers & UI.
 * finish the implementation of the CLI mode (cli.py).
 * fix increase node size button in graph window.

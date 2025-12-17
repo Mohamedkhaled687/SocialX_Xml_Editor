@@ -18,7 +18,7 @@ class BrowseWindow(BaseXMLWindow):
         self.file_path_box: QLineEdit = QLineEdit()
 
         super().__init__(
-            window_title="🌐 SocialNet XML Parser - Browse Mode",
+            window_title="🌐 SocialX XML Parser - Browse Mode",
             mode_name="Browse mode"
         )
 

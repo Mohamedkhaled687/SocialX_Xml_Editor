@@ -12,7 +12,7 @@ class ManualWindow(BaseXMLWindow):
         self.input_text_box: QTextEdit = QTextEdit()
 
         super().__init__(
-            window_title="🌐 SocialNet XML Parser - Manual Mode",
+            window_title="🌐 SocialX XML Parser - Manual Mode",
             mode_name="Manual mode"
         )
 
@@ -49,7 +49,7 @@ class ManualWindow(BaseXMLWindow):
 
         text_layout.addLayout(text_title_layout)
 
-        self.input_text_box.setPlaceholderText("Enter your Social Network XML Data here")
+        self.input_text_box.setPlaceholderText("Enter your SocialX XML Data here")
         self.input_text_box.setObjectName("textInput")
         self.input_text_box.setMinimumHeight(40)
 
