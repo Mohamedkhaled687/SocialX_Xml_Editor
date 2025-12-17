@@ -13,7 +13,7 @@ Key Features:
 
 
 """
-
+from ..utils import file_io,XMLTree
 import textwrap
 import re
 from typing import List, Tuple, Optional, Any, Dict
@@ -534,7 +534,7 @@ class XMLController:
     # SECTION 6: Compression and Decompression
     # ===================================================================
 
-    def compress_to_string(self) -> str:
+    def compress_to_string(self, output_path: Optional[str] = None) -> str:
         if not self.xml_string:
             return ""
 
@@ -595,10 +595,28 @@ class XMLController:
         for t in tokens:
             out.extend(ByteUtils.pack_u16(t))
 
-        return bytes([b if b < 256 else 63 for b in out]).decode("latin-1")
+        output = bytes([b if b < 256 else 63 for b in out]).decode("latin-1")
+        with open(output_path,mode = 'w') as f:
+            f.write(output)
 
-    def decompress_from_string(self, compressed_string: Optional[str] = None) -> str:
-        data = bytearray(compressed_string.encode("latin-1"))
+        return output
+
+    def decompress_from_string(self,
+                               output_path: Optional[str] = None,
+                               input_path: Optional[str] = None,
+                               compressed_string: Optional[str] = None
+                               ) -> str:
+
+        if input_path is not None:
+            with open(input_path, 'r') as f:
+                data = f.read()
+                data = bytearray(data.encode("latin-1"))
+        elif compressed_string is not None and input_path is None:
+            data = bytearray(compressed_string.encode("latin-1"))
+        else:
+            raise ValueError("You must provide either an input_path or a compressed_string.")
+
+
         offset = 0
         try:
             # Check for at least 4 bytes for merge_count
@@ -644,6 +662,48 @@ class XMLController:
                         new_tokens.append(t)
                 tokens = new_tokens
 
-            return ''.join(chr(t) for t in tokens)
+            output = ''.join(chr(t) for t in tokens)
+            if output_path is not None:
+                file_io.write_file(output_path,data= output)
+
+            return output
         except Exception as e:
             raise ValueError(f"{e}")
+
+    def search_in_posts(self,
+                       word: Optional[str] = None,
+                       topic: Optional[str] = None
+                       ) -> Optional[List[str]]:
+        """
+        searching ability in the post for a topic or a word
+        :param word: string word to search for in all posts
+        :param topic: string topic to search for in all posts
+        :return: List[str], posts that has the word or the topic written in them
+        when error: returns None
+        """
+        if (word is None and topic is None) or (word is not None and topic is not None):
+            return None
+
+        if self.xml_string and self.xml_data is None:
+            self.xml_data = XMLTree.fromstring(self.xml_string)
+
+        result = []
+        users = self.xml_data.findall('.//user')
+        for user in users:
+            for post_elem in user.findall('.//post'):
+                if word is not None:
+                     if post_elem.text:
+                        ack = post_elem.find('body').text.find(word)
+                        if ack > 0:
+                            result.append(f"in user: {user.find('name').text.strip()}'s. found relevant post: {post_elem.find('body').text.strip()}")
+                if topic is not None:
+                    for topic_elem in post_elem.findall('.//topics/topic'):
+                        if topic_elem is not None and topic_elem.text:
+                            ack = topic_elem.text.find(topic)
+                            if ack > 0:
+                                result.append(f"in user: {user.find('name').text.strip()}'s. found relevant post: {post_elem.find('body').text.strip()}")
+
+        if len(result) == 0:
+            result.append("found no relevant posts in any user's posts")
+
+        return result

@@ -31,11 +31,16 @@ mini_arg.add_argument('-o',"--output",required=False,type=str,help='Path to the 
 
 compress_arg = commands.add_parser('compress', help= 'compressing XML file to specified destination')
 compress_arg.add_argument('-i',"--input",required=True,type=str,help='Path to the input XML file')
-compress_arg.add_argument('-o',"--output",required=False,type=str,help='Path to the output XML file')
+compress_arg.add_argument('-o',"--output",required=True,type=str,help='Path to the output XML file')
 
 decompress_arg = commands.add_parser('decompress', help= 'decompressing XML file to specified destination')
 decompress_arg.add_argument('-i',"--input",required=True,type=str,help='Path to the input XML file')
 decompress_arg.add_argument('-o',"--output",required=False,type=str,help='Path to the output XML file')
+
+search_arg = commands.add_parser('search', help= 'search through XML file in it\'s posts')
+search_arg.add_argument('-i',"--input",required=True,type=str,help='Path to the input XML file')
+search_arg.add_argument('-w',"--word",required=False,type=str,help='search with the given word')
+search_arg.add_argument('-t',"--topic",required=False,type=str,help='search with the given topic')
 
 
 if len(sys.argv) == 1:
@@ -82,3 +87,28 @@ if args.command == 'json':
                 print(f"json data format: \n\n{json_data}")
         else:
             print("invalid argument")
+
+if args.command == 'compress':
+    ack = file_io.read_file(args.input)
+    if ack[0]:
+        editor.set_xml_string(file_io.read_file(args.input)[1])
+        editor.compress_to_string(output_path= args.output)
+        print(f"saved to {args.output}")
+    else:
+        print("failed to compress the file ... check input path")
+
+if args.command == 'decompress':
+    if args.output is not None:
+        editor.decompress_from_string(input_path=args.input, output_path=args.output)
+        print(f"saved to {args.output}")
+    else:
+        print(editor.decompress_from_string(input_path= args.input))
+
+if args.command == 'search':
+    ack = file_io.read_file(args.input)
+    if ack[0]:
+        editor.set_xml_string(file_io.read_file(args.input)[1])
+        if args.word is not None:
+            print(editor.search_in_posts(word= args.word))
+        else:
+            print(editor.search_in_posts(topic=args.topic))
