@@ -1,6 +1,3 @@
-* resolve compress and decompress conflicts (with error pop window).
-* implement the search feature with the same scheme of the project controllers & UI.
-* finish the implementation of the CLI mode (cli.py).
 * prevent operations on compressed version in browse or manual mode.
 * Add an interactive command line loop that allow the user for multiple commands
 * make decompress function work !!
