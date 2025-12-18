@@ -87,7 +87,7 @@ class BrowseWindow(BaseXMLWindow):
 
         # Validate extension
         _, ext = os.path.splitext(file_path)
-        if ext.lower() != ".xml":
+        if ext.lower() != ".xml" or ext.lower() != ".txt":
             QMessageBox.warning(
                 self,
                 "Invalid File",
