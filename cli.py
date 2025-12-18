@@ -7,9 +7,8 @@ import os
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from src.controllers import XMLController, GraphController
-from src.utils import file_io
+from src.utils import file_io,network_analyzer
 
 parser = argparse.ArgumentParser(description="use XML editor in CLI mode")
 commands =parser.add_subparsers(dest='command', help='Available functionalities',required=True)
@@ -52,8 +51,11 @@ influencer_arg.add_argument('-i',"--input",required=True,type=str,help='Path to 
 
 mutual_arg = commands.add_parser('mutual', help= 'returns mutual followers in a given social network (defined by a xml file)')
 mutual_arg.add_argument('-i',"--input",required=True,type=str,help='Path to the input XML file')
-mutual_arg.add_argument('-ids',"--ids",required=True,type=str,help='Path to the output XML file')
+mutual_arg.add_argument('-ids',"--ids",required=True,type=str,help='ids for each of the users that\'s desired to get the mutual between them')
 
+suggest_arg = commands.add_parser('suggest', help= 'suggests a new friend based on a given social network (defined by a xml file)')
+suggest_arg.add_argument('-i',"--input",required=True,type=str,help='Path to the input XML file')
+suggest_arg.add_argument('-id',"--id",required=True,type=str,help='id of the user for suggesting to him')
 
 if len(sys.argv) == 1:
         parser.print_help()
@@ -149,14 +151,29 @@ match args.command:
         ack = file_io.read_file(args.input)
         if ack[0]:
             graph.set_xml_data(ack[1])
-            graph.build_graph()
+            _,node,_,_ = graph.build_graph()
+            analyzer = network_analyzer.NetworkAnalyzer(graph=graph.get_graph(), nodes_dict=node)
             result = re.findall(r'\d+', args.ids)
-            mutual = graph.get_mutual_followers_between_many(result)
+            mutual = analyzer.get_mutual_followers_between_many(result)
             out = ""
             for i in range(len(mutual)):
-                out += f"{i+1}.\n       name: {mutual[i]['name']} with an id of {mutual[i]['user_id']} \n"
+                out += f"{i+1}.\n   name: {mutual[i]['name']} with an id of {mutual[i]['user_id']} \n"
             if out == "":
                 print("we didn't find any mutual friend")
             else:
                 print(f"we found some mutual friends you might wanna check out:\n   {out}")
 
+    case 'suggest':
+        ack = file_io.read_file(args.input)
+        if ack[0]:
+            graph.set_xml_data(ack[1])
+            _,node,_,_ = graph.build_graph()
+            analyzer = network_analyzer.NetworkAnalyzer(graph = graph.get_graph(),nodes_dict= node)
+            users = analyzer.suggest_users_to_follow(user_id= args.input.strip(), limit = 5)
+            out = ""
+            for i in range(len(users)):
+                out += f"{i + 1}.\n        name: {users[i]['name']} with an id of {users[i]['user_id']} \n"
+            if out == "":
+                print("we couldn't suggest any new friend")
+            else:
+                print(f"we can suggest some new friends you might wanna check out:\n   {out}")
