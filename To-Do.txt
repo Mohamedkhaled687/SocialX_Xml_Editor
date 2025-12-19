@@ -1,9 +1,3 @@
-* resolve compress and decompress conflicts (with error pop window).
-* implement the project manager (project kickoff point before CLI & UI).
-* implement the search feature with the same scheme of the project controllers & UI.
-* finish the implementation of the CLI mode (cli.py). #Done
-* fix increase node size button in graph window.
-* increase font sizes to fill graph sidebar.
-* allow browse mode to accept .txt format (the compressed version that is to be passed on to decompression).
 * prevent operations on compressed version in browse or manual mode.
-*
+* Add an interactive command line loop that allow the user for multiple commands
+* make decompress function work !!
