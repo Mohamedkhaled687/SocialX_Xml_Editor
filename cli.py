@@ -312,6 +312,7 @@ def print_help_commands():
     print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
     print(f"{Fore.YELLOW}Special Commands:{Style.RESET_ALL}")
     print(f"  {Fore.GREEN}help{Style.RESET_ALL}  - Show this help message")
+    print(f"  {Fore.GREEN}clear{Style.RESET_ALL} - Clear the terminal screen")
     print(f"  {Fore.GREEN}exit{Style.RESET_ALL}  - Exit the REPL (also: quit, q)")
     print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}\n")
 
@@ -354,6 +355,12 @@ def run_repl():
             # Handle help command
             if user_input.lower() == 'help':
                 print_help_commands()
+                continue
+            
+            # Handle clear command
+            if user_input.lower() == 'clear':
+                # Clear terminal screen (cross-platform)
+                os.system('clear' if os.name != 'nt' else 'cls')
                 continue
             
             # Parse and execute command
