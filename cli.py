@@ -125,6 +125,20 @@ def execute_command(args, editor, graph):
             else:
                 print(f"{Fore.RED}error while opening the input file{Style.RESET_ALL}")
 
+        case 'mini':
+            ack = file_io.read_file(args.input)
+            if ack[0]:
+                try:
+                    editor.set_xml_string(file_io.read_file(args.input)[1])
+                    minified = editor.minify()
+                    if args.output is not None:
+                        file_io.write_file(args.output, minified)
+                    print(minified)
+                except RuntimeError as e:
+                    print(f"{Fore.RED}error while processing xml data{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.RED}error while opening the input file{Style.RESET_ALL}")
+
         case 'compress':
             ack = file_io.read_file(args.input)
             if ack[0]:
