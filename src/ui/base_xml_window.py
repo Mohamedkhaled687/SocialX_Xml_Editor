@@ -390,7 +390,8 @@ class BaseXMLWindow(QMainWindow):
             self,
             "Save Result",
             "",
-            "Text Files (*.txt);; XML Files (*.xml);;JSON Files (*.json);;All Files (*)"
+            "",
+            "Text files (*.txt);;XML files (*.xml)"
         )
 
         if not file_path:
