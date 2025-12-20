@@ -489,7 +489,7 @@ class BaseXMLWindow(QMainWindow):
             return
 
         try:
-            self.output_text = self.xml_controller.decompress_from_string(self.input_text)
+            self.output_text = self.xml_controller.decompress_from_string(None, None, self.input_text)
             self.result_text_box.setText(self.output_text)
             self.result_text_box.show()
         except Exception as e:
