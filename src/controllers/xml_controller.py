@@ -16,6 +16,7 @@ Key Features:
 from ..utils import file_io,XMLTree
 import textwrap
 import re
+import base64
 from typing import List, Tuple, Optional, Any, Dict
 from ..utils.binary_utils import ByteUtils
 
@@ -595,9 +596,12 @@ class XMLController:
         for t in tokens:
             out.extend(ByteUtils.pack_u16(t))
 
-        output = bytes([b if b < 256 else 63 for b in out]).decode("latin-1")
-        with open(output_path,mode = 'w') as f:
-            f.write(output)
+        # Fixation: Convert raw binary 'out' to a Base64 string for UI/File safety
+        output = base64.b64encode(out).decode('utf-8')
+
+        if output_path:
+            with open(output_path, mode='w') as f:
+                f.write(output)
 
         return output
 
@@ -609,13 +613,13 @@ class XMLController:
 
         if input_path is not None:
             with open(input_path, 'r') as f:
-                data = f.read()
-                data = bytearray(data.encode("latin-1"))
-        elif compressed_string is not None and input_path is None:
-            data = bytearray(compressed_string.encode("latin-1"))
+                # Fixation: Read the Base64 string from file and decode to binary
+                data = bytearray(base64.b64decode(f.read().strip()))
+        elif compressed_string is not None:
+            # Fixation: Decode the manually entered Base64 string to binary
+            data = bytearray(base64.b64decode(compressed_string.strip()))
         else:
             raise ValueError("You must provide either an input_path or a compressed_string.")
-
 
         offset = 0
         try:
@@ -664,7 +668,7 @@ class XMLController:
 
             output = ''.join(chr(t) for t in tokens)
             if output_path is not None:
-                file_io.write_file(output_path,data= output)
+                file_io.write_file(output_path, data=output)
 
             return output
         except Exception as e:
