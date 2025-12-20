@@ -63,7 +63,7 @@ class AppManager:
 
     def run(self):
         """Start the Qt event loop."""
-        sys.exit(self.app.exec())
+        return self.app.exec()
 
 
 if __name__ == '__main__':
