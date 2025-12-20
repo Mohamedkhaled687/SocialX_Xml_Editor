@@ -68,5 +68,6 @@ class AppManager:
 
 if __name__ == '__main__':
     manager = AppManager()
-    manager.run()
+    exit_code = manager.run()
+    sys.exit(exit_code)
 
