@@ -17,6 +17,7 @@ from ..utils import file_io,XMLTree
 import textwrap
 import re
 import base64
+import binascii
 from typing import List, Tuple, Optional, Any, Dict
 from ..utils.binary_utils import ByteUtils
 
@@ -611,15 +612,18 @@ class XMLController:
                                compressed_string: Optional[str] = None
                                ) -> str:
 
-        if input_path is not None:
-            with open(input_path, 'r') as f:
-                # Fixation: Read the Base64 string from file and decode to binary
-                data = bytearray(base64.b64decode(f.read().strip()))
-        elif compressed_string is not None:
-            # Fixation: Decode the manually entered Base64 string to binary
-            data = bytearray(base64.b64decode(compressed_string.strip()))
-        else:
-            raise ValueError("You must provide either an input_path or a compressed_string.")
+        try:
+            if input_path is not None:
+                with open(input_path, 'r') as f:
+                    # Fixation: Read the Base64 string from file and decode to binary
+                    data = bytearray(base64.b64decode(f.read().strip()))
+            elif compressed_string is not None:
+                # Fixation: Decode the manually entered Base64 string to binary
+                data = bytearray(base64.b64decode(compressed_string.strip()))
+            else:
+                raise ValueError("You must provide either an input_path or a compressed_string.")
+        except (binascii.Error, ValueError) as e:
+            raise ValueError(f"Invalid compressed data format: {e}")
 
         offset = 0
         try:
