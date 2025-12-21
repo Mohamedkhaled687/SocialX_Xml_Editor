@@ -1,8 +1,12 @@
 # SocialX XML Editor
 
+<div align="center">
+
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Status](https://img.shields.io/badge/status-active-success.svg)
+
+</div>
 
 A professional XML editor and visualizer for social network data with dual interface support (GUI and CLI). Parse, validate, format, compress, and analyze XML files with powerful graph visualization capabilities.
 
