@@ -40,11 +40,43 @@ class BaseXMLWindow(QMainWindow):
         self.output_text: str = ""
         self.result_text_box: QTextEdit = QTextEdit()
 
+        self.xml_buttons = []
+        self.compressed_buttons = []
+
+        # Initialize backing attributes before using the properties
+        self._is_xml: bool = False
+        self._is_compressed: bool = False
+
+        # Initialize properties (may trigger any setter side effects)
+        self.is_xml = False
+        self.is_compressed = False
         self.window_title: str = window_title
         self.mode_name: str = mode_name
 
         self.setup_ui()
         self.apply_stylesheet()
+
+    @property
+    def is_xml(self) -> bool:
+        return self._is_xml
+
+    @is_xml.setter
+    def is_xml(self, value: bool):
+        self._is_xml = value
+        if hasattr(self, 'xml_buttons'):
+            for btn in self.xml_buttons:
+                btn.setEnabled(value)
+
+    @property
+    def is_compressed(self) -> bool:
+        return self._is_compressed
+
+    @is_compressed.setter
+    def is_compressed(self, value: bool):
+        self._is_compressed = value
+        if hasattr(self, 'compressed_buttons'):
+            for btn in self.compressed_buttons:
+                btn.setEnabled(value)
 
     def setup_ui(self) -> None:
         """Set up the user interface."""
@@ -155,23 +187,28 @@ class BaseXMLWindow(QMainWindow):
         ops_layout.addWidget(ops_subtitle)
 
         parsing_ops = [
-            ("📋 Check XML Errors", self.validate_xml),
-            ("🛠️ Fix XML Errors", self.correct_errors),
-            ("✨ Format XML", self.format_xml),
-            ("📦 Compress XML", self.compress),
-            ("📂 Decompress to XML", self.decompress),
-            ("✂️ Minify XML", self.minify),
-            ("📄 XML to JSON", self.export_to_json),
-            ("🕸️ Explore Network", self.visualize_network),
-            ("🔍 Post search", self.search)
+            ("📋 Check XML Errors", self.validate_xml, "is_xml"),
+            ("🛠️ Fix XML Errors", self.correct_errors, "is_xml"),
+            ("✨ Format XML", self.format_xml, "is_xml"),
+            ("📦 Compress XML", self.compress, "is_xml"),
+            ("📂 Decompress to XML", self.decompress, "is_compressed"),
+            ("✂️ Minify XML", self.minify, "is_xml"),
+            ("📄 XML to JSON", self.export_to_json, "is_xml"),
+            ("🕸️ Explore Network", self.visualize_network, "is_xml"),
+            ("🔍 Post search", self.search, "is_xml")
         ]
 
-        for text, handler in parsing_ops:
+        for text, handler, enable_signal in parsing_ops:
             btn = QPushButton(text)
             btn.setObjectName("operationBtn")
             btn.setMinimumHeight(46)
-            # btn.setMaximumWidth(20)
             btn.clicked.connect(handler)
+
+            if enable_signal == "is_xml":
+                self.xml_buttons.append(btn)
+            elif enable_signal == "is_compressed":
+                self.compressed_buttons.append(btn)
+
             ops_layout.addWidget(btn)
 
         ops_layout.addStretch()
@@ -327,6 +364,11 @@ class BaseXMLWindow(QMainWindow):
             #operationBtn:pressed {{
                 background: rgba(30, 50, 80, 180);
             }}
+            #operationBtn:disabled {{
+                background: rgba(40, 40, 40, 100);
+                color: rgba(150, 150, 150, 100);
+                border: 1px solid rgba(100, 100, 100, 50);
+            }}
         """)
 
     @abstractmethod
@@ -351,9 +393,9 @@ class BaseXMLWindow(QMainWindow):
 
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "Save Result",
+            "Select XML File",
             "",
-            "Text Files (*.txt);; XML Files (*.xml);;JSON Files (*.json);;All Files (*)"
+            "XML files (*.xml);;Text files (*.txt);;JSON files (*.json)"
         )
 
         if not file_path:
@@ -489,7 +531,7 @@ class BaseXMLWindow(QMainWindow):
             return
 
         try:
-            self.output_text = self.xml_controller.decompress_from_string(self.input_text)
+            self.output_text = self.xml_controller.decompress_from_string(None, None, self.input_text)
             self.result_text_box.setText(self.output_text)
             self.result_text_box.show()
         except Exception as e:
