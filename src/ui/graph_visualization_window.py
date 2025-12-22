@@ -636,8 +636,8 @@ class GraphVisualizationWindow(QWidget):
         layout.addWidget(font_color_label)
 
         self.font_color_combo = QComboBox()
-        self.font_color_combo.addItems(["Black", "White", "Red", "Blue", "Green", "Gray"])
-        # Default to Black
+        self.font_color_combo.addItems(["White","Black","Red", "Blue", "Green", "Gray"])
+        # Default to White
         self.font_color_combo.setCurrentIndex(0)
         self.font_color_combo.setStyleSheet(
             """
@@ -711,6 +711,14 @@ class GraphVisualizationWindow(QWidget):
                 self.suggestions_list.clear()
         except Exception:
             pass
+        # Reset highlight color selection when modes change
+        try:
+            if hasattr(self, 'suggestions_color_combo'):
+                self.suggestions_color_combo.blockSignals(True)
+                self.suggestions_color_combo.setCurrentIndex(-1)
+        finally:
+            if hasattr(self, 'suggestions_color_combo'):
+                self.suggestions_color_combo.blockSignals(False)
         # also clear suggested_users set used for highlighting
         try:
             self.suggested_users = set()
@@ -906,18 +914,14 @@ class GraphVisualizationWindow(QWidget):
             font-weight: bold;
             """
         )
-        # self.suggestions_user_combo.setEditable(True)
         self.suggestions_user_combo.addItems(users_list)
         
-        # Proper placeholder (not selectable)
+        # Proper placeholder
         self.suggestions_user_combo.setPlaceholderText("Select a user")
         self.suggestions_user_combo.setCurrentIndex(-1)
         self.suggestions_user_combo.currentIndexChanged.connect(self.find_follow_suggestions)
         user_layout.addWidget(self.suggestions_user_combo)
         layout.addLayout(user_layout)
-
-        # Suggestions run automatically when selection changes; button removed
-
         # Highlight color chooser for suggestions
         color_layout = QHBoxLayout()
         color_label = QLabel("Highlight color:")
@@ -967,6 +971,14 @@ class GraphVisualizationWindow(QWidget):
         user_name = self.suggestions_user_combo.currentText()
         if idx == -1 or not user_name:
             self.suggestions_list.clear()
+            # Reset highlight color when no user is selected
+            try:
+                if hasattr(self, 'suggestions_color_combo'):
+                    self.suggestions_color_combo.blockSignals(True)
+                    self.suggestions_color_combo.setCurrentIndex(-1)
+            finally:
+                if hasattr(self, 'suggestions_color_combo'):
+                    self.suggestions_color_combo.blockSignals(False)
             return
 
         # Determine user id depending on label mode
