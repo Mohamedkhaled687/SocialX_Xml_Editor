@@ -507,7 +507,7 @@ class GraphVisualizationWindow(QWidget):
 
         self.labels_mode_combo = QComboBox()
         self.labels_mode_combo.addItems(["Names", "IDs"])
-        self.labels_mode_combo.setCurrentIndex(0)  # Default to Names
+        self.labels_mode_combo.setCurrentIndex(1)  # Default to IDs
         self.labels_mode_combo.setStyleSheet(
             """
             font-size: 14px;
@@ -620,6 +620,7 @@ class GraphVisualizationWindow(QWidget):
             "Uniform (Steel Blue)",
             "Random Colors"
         ])
+        self.color_combo.setCurrentIndex(2)  # Default to Uniform
         self.color_combo.setStyleSheet(
             """
             font-size: 14px;
@@ -628,6 +629,24 @@ class GraphVisualizationWindow(QWidget):
         )
         self.color_combo.currentIndexChanged.connect(lambda: self.draw_graph())
         layout.addWidget(self.color_combo)
+        
+        # Font color for labels
+        font_color_label = QLabel("Font Color:")
+        font_color_label.setStyleSheet("font-size: 16px;")
+        layout.addWidget(font_color_label)
+
+        self.font_color_combo = QComboBox()
+        self.font_color_combo.addItems(["Black", "White", "Red", "Blue", "Green", "Gray"])
+        # Default to Black
+        self.font_color_combo.setCurrentIndex(0)
+        self.font_color_combo.setStyleSheet(
+            """
+            font-size: 14px;
+            font-weight: bold;
+            """
+        )
+        self.font_color_combo.currentIndexChanged.connect(lambda: self.draw_graph())
+        layout.addWidget(self.font_color_combo)
         
         return group
     
@@ -906,8 +925,9 @@ class GraphVisualizationWindow(QWidget):
         color_layout.addWidget(color_label)
 
         self.suggestions_color_combo = QComboBox()
-        self.suggestions_color_combo.addItems(["None", "Orange", "Purple", "Cyan"])
-        self.suggestions_color_combo.setCurrentIndex(0)  # Default None
+        self.suggestions_color_combo.addItems(["Orange", "Purple", "Cyan"])
+        self.suggestions_color_combo.setPlaceholderText("Select Color")
+        self.suggestions_color_combo.setCurrentIndex(-1)  # Default None
         self.suggestions_color_combo.setStyleSheet(
             """
             font-size: 14px;
@@ -1313,11 +1333,27 @@ class GraphVisualizationWindow(QWidget):
             labels = {node: node for node in self.graph.nodes()}
         else:
             labels = {node: self.nodes.get(node, node) for node in self.graph.nodes()}
+        # Determine font color from combo if present
+        font_color_name = None
+        if hasattr(self, 'font_color_combo'):
+            font_color_name = self.font_color_combo.currentText()
+
+        color_map = {
+            'Black': 'black',
+            'White': 'white',
+            'Red': 'red',
+            'Blue': 'blue',
+            'Green': 'green',
+            'Gray': 'gray'
+        }
+
+        font_color = color_map.get(font_color_name, 'red')
+
         nx.draw_networkx_labels(
             self.graph, pos, labels, ax=ax,
             font_size=10,
             font_weight='bold',
-            font_color='red'
+            font_color=font_color
         )
         
         # Set title
