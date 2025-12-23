@@ -83,8 +83,8 @@ class GraphVisualizationWindow(QWidget):
         self._update_info_label()
         # Update statistics display
         self._update_statistics_group()
-        # Update most active user display
-        self._update_most_active_group()
+        # Update statistics display
+        self._update_statistics_group()
         # Refresh selectors and textual labels according to current label mode
         try:
             self._refresh_user_selectors()
@@ -424,10 +424,6 @@ class GraphVisualizationWindow(QWidget):
         analysis_layout = QVBoxLayout(analysis_widget)
         analysis_layout.setSpacing(15)
         
-        # Most Active User
-        active_group = self._create_most_active_group()
-        analysis_layout.addWidget(active_group)
-        
         # Mutual Followers
         mutual_group = self._create_mutual_followers_group()
         analysis_layout.addWidget(mutual_group)
@@ -679,17 +675,41 @@ class GraphVisualizationWindow(QWidget):
 \t• <b>Avg Following</b>: {self.metrics.get('avg_out_degree', 0):.1f}<br>
         """
         
-        if 'most_influential' in self.metrics:
-            inf = self.metrics['most_influential']
-            mode = getattr(self, 'labels_mode_combo', None).currentText() if hasattr(self, 'labels_mode_combo') else 'Names'
-            display_inf = (f"UserID {inf['id']}" if mode == 'IDs' else inf['name'])
-            stats_text += f"<br><b>Most Influential:</b><br> \t•{display_inf} has  {inf['followers']} followers.<br>"
+        if 'most_influential' in self.metrics and self.metrics['most_influential']:
+            inf_data = self.metrics['most_influential']
+            # Defensive check: if it's a dict (old format), wrap in list
+            if isinstance(inf_data, dict):
+                inf_list = [inf_data]
+            else:
+                inf_list = inf_data
+            
+            if inf_list:
+                followers_count = inf_list[0]['followers']
+                stats_text += f"<br><b>Most Influential ({followers_count} followers):</b><br>"
+                
+                mode = getattr(self, 'labels_mode_combo', None).currentText() if hasattr(self, 'labels_mode_combo') else 'Names'
+                
+                for inf in inf_list:
+                    display_inf = (f"User ID: {inf['id']}" if mode == 'IDs' else inf['name'])
+                    stats_text += f"\t• {display_inf}<br>"
         
-        if 'most_active' in self.metrics:
-            act = self.metrics['most_active']
-            mode = getattr(self, 'labels_mode_combo', None).currentText() if hasattr(self, 'labels_mode_combo') else 'Names'
-            display_act = (f"UserID {act['id']}" if mode == 'IDs' else act['name'])
-            stats_text += f"<br><b>Most Active:</b><br> \t•{display_act} follows {act['following']} users.<br>"
+        if 'most_active' in self.metrics and self.metrics['most_active']:
+            act_data = self.metrics['most_active']
+            # Defensive check: if it's a dict (old format), wrap in list
+            if isinstance(act_data, dict):
+                act_list = [act_data]
+            else:
+                act_list = act_data
+
+            if act_list:
+                following_count = act_list[0]['following']
+                stats_text += f"<br><b>Most Active ({following_count} following):</b><br>"
+                
+                mode = getattr(self, 'labels_mode_combo', None).currentText() if hasattr(self, 'labels_mode_combo') else 'Names'
+                
+                for act in act_list:
+                    display_act = (f"User ID: {act['id']}" if mode == 'IDs' else act['name'])
+                    stats_text += f"\t• {display_act}<br>"
         
         self.stats_label.setText(stats_text)
 
@@ -702,7 +722,6 @@ class GraphVisualizationWindow(QWidget):
         # Update textual displays to match mode
         try:
             self._update_statistics_group()
-            self._update_most_active_group()
         except Exception:
             pass
         # Clear suggestions when switching label mode to avoid stale entries/highlights
@@ -725,6 +744,12 @@ class GraphVisualizationWindow(QWidget):
         except Exception:
             pass
 
+        if hasattr(self, 'mutual_label') and "No results yet" not in self.mutual_label.text():
+            try:
+                self.find_mutual_followers()
+            except Exception:
+                pass
+        
         self.draw_graph()
 
     def _refresh_user_selectors(self):
@@ -740,18 +765,30 @@ class GraphVisualizationWindow(QWidget):
         if hasattr(self, 'mutual_user1_combo'):
             try:
                 self.mutual_user1_combo.blockSignals(True)
+                current_idx = self.mutual_user1_combo.currentIndex()
                 self.mutual_user1_combo.clear()
                 self.mutual_user1_combo.addItems(items)
-                self.mutual_user1_combo.setCurrentIndex(0 if len(items) > 0 else -1)
+                
+                # Restore index if valid, otherwise default
+                if current_idx >= 0 and current_idx < len(items):
+                     self.mutual_user1_combo.setCurrentIndex(current_idx)
+                else:
+                     self.mutual_user1_combo.setCurrentIndex(0 if len(items) > 0 else -1)
             finally:
                 self.mutual_user1_combo.blockSignals(False)
 
         if hasattr(self, 'mutual_user2_combo'):
             try:
                 self.mutual_user2_combo.blockSignals(True)
+                current_idx = self.mutual_user2_combo.currentIndex()
                 self.mutual_user2_combo.clear()
                 self.mutual_user2_combo.addItems(items)
-                self.mutual_user2_combo.setCurrentIndex(1 if len(items) > 1 else (0 if len(items) == 1 else -1))
+                
+                # Restore index if valid, otherwise default
+                if current_idx >= 0 and current_idx < len(items):
+                     self.mutual_user2_combo.setCurrentIndex(current_idx)
+                else:
+                     self.mutual_user2_combo.setCurrentIndex(1 if len(items) > 1 else (0 if len(items) == 1 else -1))
             finally:
                 self.mutual_user2_combo.blockSignals(False)
 
@@ -778,44 +815,8 @@ class GraphVisualizationWindow(QWidget):
         if hasattr(self, 'mutual_instructions'):
             self.mutual_instructions.setText('Select user IDs to find mutual followers:' if mode == 'IDs' else 'Select users to find mutual followers:')
         if hasattr(self, 'suggestions_instructions'):
-            self.suggestions_instructions.setText('Select a user ID to see follow suggestions:' if mode == 'IDs' else 'Select a user to see follow suggestions:')
-        if hasattr(self, 'most_active_group'):
-            self.most_active_group.setTitle('Most Active User ID' if mode == 'IDs' else 'Most Active User')
-    
-    def _create_most_active_group(self):
-        """Create group to display most active user."""
-        self.most_active_group = QGroupBox("Most Active User")
-        group = self.most_active_group
-        layout = QVBoxLayout(group)
-        layout.setSpacing(8)
-        
-        # Create label to hold most active user info
-        self.active_label = QLabel()
-        self.active_label.setWordWrap(True)
-        self.active_label.setStyleSheet("font-size: 16px; line-height: 1.5;")
-        layout.addWidget(self.active_label)
-        
-        return group
-    
-    def _update_most_active_group(self):
-        """Update the most active user display."""
-        if not hasattr(self, 'active_label'):
-            return
-        
-        # Group box already shows the title; don't repeat it inside the content
-        active_text = ""
-        
-        if 'most_active' in self.metrics:
-            act = self.metrics['most_active']
-            mode = getattr(self, 'labels_mode_combo', None).currentText() if hasattr(self, 'labels_mode_combo') else 'Names'
-            display = (f"UserID: {act['id']}" if mode == 'IDs' else act['name'])
-            # Show the most active user without an extra bullet/blank line
-            active_text += f"<b>{display}</b><br>Follows: {act['following']} users"
-        else:
-            active_text += "No data available"
-        
-        self.active_label.setText(active_text)
-    
+            self.suggestions_instructions.setText('Select a user id to see follow suggestions:' if mode == 'IDs' else 'Select a user to see follow suggestions:')
+
     def _create_mutual_followers_group(self):
         """Create group for mutual followers analysis."""
         group = QGroupBox("Mutual Followers Analysis")
@@ -872,6 +873,13 @@ class GraphVisualizationWindow(QWidget):
         find_mutual_btn = QPushButton("🔍 Find Mutual Followers")
         find_mutual_btn.clicked.connect(self.find_mutual_followers)
         layout.addWidget(find_mutual_btn)
+        
+        # Highlight toggle
+        self.mutual_highlight_check = QCheckBox("Highlight on Graph")
+        self.mutual_highlight_check.setChecked(True)
+        self.mutual_highlight_check.setStyleSheet("font-size: 14px; color: rgba(150, 180, 220, 255);")
+        self.mutual_highlight_check.stateChanged.connect(self.draw_graph)
+        layout.addWidget(self.mutual_highlight_check)
         
         # Results display
         self.mutual_label = QLabel("No results yet")
@@ -1065,7 +1073,12 @@ class GraphVisualizationWindow(QWidget):
             return
         
         # Determine user IDs depending on label mode
-        mode = getattr(self, 'labels_mode_combo', None).currentText() if hasattr(self, 'labels_mode_combo') else 'Names'
+        # robustly check mode
+        try:
+            mode = self.labels_mode_combo.currentText()
+        except AttributeError:
+            mode = 'Names'
+
         user1_id = None
         user2_id = None
         if mode == 'IDs':
@@ -1101,14 +1114,18 @@ class GraphVisualizationWindow(QWidget):
         self.selected_mutual_followers = mutual_followers
         
         # Format results - show IDs if mode==IDs
-        display_user1 = (f"UserID: {user1_id}" if mode == 'IDs' else user1_name)
-        display_user2 = (f"UserID: {user2_id}" if mode == 'IDs' else user2_name)
+        display_user1 = (f"User ID: {user1_id}" if mode == 'IDs' else user1_name)
+        display_user2 = (f"User ID: {user2_id}" if mode == 'IDs' else user2_name)
         result_text = f"<b>Mutual Followers between {display_user1} and {display_user2}:</b><br>"
 
         if mutual_followers:
             result_text += f"<br>Found {len(mutual_followers)} mutual follower(s):<br>"
             for follower_id in sorted(mutual_followers):
-                follower_display = (f"UserID: {follower_id}" if mode == 'IDs' else self.nodes.get(follower_id, follower_id))
+                # Ensure we show ID if mode is IDs, ignoring node name
+                if mode == 'IDs':
+                    follower_display = f"User ID: {follower_id}"
+                else:
+                    follower_display = self.nodes.get(follower_id, follower_id)
                 result_text += f"• {follower_display}<br>"
         else:
             result_text += "<br>No mutual followers found"
@@ -1273,8 +1290,12 @@ class GraphVisualizationWindow(QWidget):
                 linewidths=2.5
             )
         
-        # Highlight selected users if any
-        if self.selected_users:
+        # Highlight selected users if any (and enabled)
+        should_highlight_mutual = True
+        if hasattr(self, 'mutual_highlight_check'):
+             should_highlight_mutual = self.mutual_highlight_check.isChecked()
+
+        if self.selected_users and should_highlight_mutual:
             selected_nodes = [n for n in self.selected_users if n in self.graph.nodes()]
             if selected_nodes:
                 # Use the same size as the actual node
@@ -1289,8 +1310,8 @@ class GraphVisualizationWindow(QWidget):
                     linewidths=3
                 )
         
-        # Highlight mutual followers
-        if self.selected_mutual_followers:
+        # Highlight mutual followers (and enabled)
+        if self.selected_mutual_followers and should_highlight_mutual:
             mutual_nodes = [n for n in self.selected_mutual_followers if n in self.graph.nodes()]
             if mutual_nodes:
                 # Use the same size as the actual node
