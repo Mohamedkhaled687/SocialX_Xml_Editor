@@ -20,7 +20,7 @@ if exist dist rmdir /s /q dist
 if exist *.spec del *.spec
 :: Run PyInstaller
 :: --onefile: Create a single executable file
-:: --name "SocialX_v12": Name the output file
+:: --name "SocialX": Name the output file
 :: --clean: Clean PyInstaller cache
 :: --icon "icon.ico": Add application icon
 :: --add-data "icon.ico;.": Bundle icon file inside the exe
