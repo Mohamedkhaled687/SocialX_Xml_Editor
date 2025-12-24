@@ -15,7 +15,7 @@ class GraphController:
     def __init__(self, xml_data = None) -> None:
         self.xml_data = xml_data
         self.G: Optional[nx.DiGraph] = None
-        self.metrics: Dict = {}
+        self.metrics: Dict[str, list] = {}
         self.analyzer: Optional[NetworkAnalyzer] = None
         self.nodes_dict: Dict[str, str] = {}
     

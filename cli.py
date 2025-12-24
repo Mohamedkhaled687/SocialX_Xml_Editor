@@ -6,6 +6,8 @@ import re
 import sys
 import os
 import shlex
+from typing import Dict
+
 import networkx as nx
 import matplotlib.pyplot as plt
 from colorama import init, Fore, Style
@@ -111,8 +113,8 @@ def execute_command(args, editor, graph):
             if ack[0]:
                 try:
                     editor.set_xml_string(file_io.read_file(args.input)[1])
-                    bool_mes, _, json_data = editor.export_to_json()
-                    if bool_mes:
+                    json_data = editor.export_to_json()
+                    if json_data is not None:
                         if args.output is not None:
                             with open(args.output, 'w', encoding='utf-8') as f:
                                 json.dump(json_data, f, indent=2, ensure_ascii=False)
@@ -181,8 +183,12 @@ def execute_command(args, editor, graph):
                 try:
                     graph.set_xml_data(ack[1])
                     graph.build_graph()
-                    metrics = graph.get_metrics()
-                    print(f"{Fore.GREEN}the most active person is: {metrics['most_active']['name']}{Style.RESET_ALL} \n{Fore.CYAN}with an id of: {metrics['most_active']['id']}{Style.RESET_ALL}")
+                    metrics: Dict[str, list] = graph.get_metrics()
+                    active_list = "\n".join([
+                        f"{i}- user_id: {u['id']}{' | '} user_name: {u['name'].lower()}{' | '} followings: {u['following']} followings"
+                        for i, u in enumerate(metrics['most_active'], 1)
+                    ])
+                    print(f"{Fore.CYAN}The most active user/s:\n{active_list}{Style.RESET_ALL}")
                 except RuntimeError as e:
                     print(f"{Fore.RED}error while processing the graph{Style.RESET_ALL}")
             else:
@@ -194,9 +200,12 @@ def execute_command(args, editor, graph):
                 try:
                     graph.set_xml_data(ack[1])
                     graph.build_graph()
-                    metrics = graph.get_metrics()
-                    print(
-                        f"{Fore.GREEN}the person that has the most influence is: {metrics['most_influential']['name']}{Style.RESET_ALL} \n{Fore.CYAN}with an id of: {metrics['most_influential']['id']}{Style.RESET_ALL}")
+                    metrics: Dict[str, list] = graph.get_metrics()
+                    influencer_list = "\n".join([
+                        f"{i}- user_id: {u['id']} user_name: {u['name'].lower()} followers: {u['followers']} followers"
+                        for i, u in enumerate(metrics['most_influential'], 1)
+                    ])
+                    print(f"{Fore.BLACK}The most active user/s:\n{influencer_list}{Style.RESET_ALL}")
                 except RuntimeError as e:
                     print(f"{Fore.RED}error while processing the graph{Style.RESET_ALL}")
             else:
@@ -231,11 +240,11 @@ def execute_command(args, editor, graph):
                     users = graph.suggest_users_to_follow(user_id=args.id.strip(), limit=5)
                     out = ""
                     for i in range(len(users)):
-                        out += f"{i + 1}.\n        name: {users[i]['name']} with an id of {users[i]['user_id']} \n"
+                        out += f"{i + 1}.     name: {users[i]['name']} with an id of {users[i]['user_id']} \n"
                     if out == "":
                         print(f"{Fore.YELLOW}we couldn't suggest any new friend{Style.RESET_ALL}")
                     else:
-                        print(f"{Fore.GREEN}we can suggest some new friends you might wanna check out:{Style.RESET_ALL}\n   {out}")
+                        print(f"{Fore.GREEN}we can suggest some new friends you might wanna check out:{Style.RESET_ALL}\n{out}")
                 except RuntimeError as e:
                     print(f"{Fore.RED}error while trying to build graph{Style.RESET_ALL}")
             else:
@@ -279,11 +288,11 @@ def print_help_commands():
          "mini -i input.xml [-o output.xml]",
          "mini -i assets/samples/file.xml -o minified.xml"),
         ("compress", "Compress XML file", 
-         "compress -i input.xml -o output.compressed",
-         "compress -i assets/samples/file.xml -o compressed.xml"),
+         "compress -i input.xml -o output.txt",
+         "compress -i assets/samples/file.xml -o compressed.txt"),
         ("decompress", "Decompress XML file", 
-         "decompress -i input.compressed [-o output.xml]",
-         "decompress -i compressed.xml -o decompressed.xml"),
+         "decompress -i input.txt [-o output.xml]",
+         "decompress -i compressed.txt -o decompressed.xml"),
         ("search", "Search in posts", 
          "search -i input.xml [-w word] [-t topic]",
          "search -i assets/samples/file.xml -w technology"),
