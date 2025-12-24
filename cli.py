@@ -6,6 +6,8 @@ import re
 import sys
 import os
 import shlex
+from typing import Dict
+
 import networkx as nx
 import matplotlib.pyplot as plt
 from colorama import init, Fore, Style
@@ -181,8 +183,12 @@ def execute_command(args, editor, graph):
                 try:
                     graph.set_xml_data(ack[1])
                     graph.build_graph()
-                    metrics = graph.get_metrics()
-                    print(f"{Fore.GREEN}the most active person is: {metrics['most_active']['name']}{Style.RESET_ALL} \n{Fore.CYAN}with an id of: {metrics['most_active']['id']}{Style.RESET_ALL}")
+                    metrics: Dict[str, list] = graph.get_metrics()
+                    active_list = "\n".join([
+                        f"{i}- user_id: {u['id']}{' | '} user_name: {u['name'].lower()}{' | '} followings: {u['following']} followings"
+                        for i, u in enumerate(metrics['most_active'], 1)
+                    ])
+                    print(f"{Fore.CYAN}The most active user/s:\n{active_list}{Style.RESET_ALL}")
                 except RuntimeError as e:
                     print(f"{Fore.RED}error while processing the graph{Style.RESET_ALL}")
             else:
@@ -194,9 +200,12 @@ def execute_command(args, editor, graph):
                 try:
                     graph.set_xml_data(ack[1])
                     graph.build_graph()
-                    metrics = graph.get_metrics()
-                    print(
-                        f"{Fore.GREEN}the person that has the most influence is: {metrics['most_influential']['name']}{Style.RESET_ALL} \n{Fore.CYAN}with an id of: {metrics['most_influential']['id']}{Style.RESET_ALL}")
+                    metrics: Dict[str, list] = graph.get_metrics()
+                    influencer_list = "\n".join([
+                        f"{i}- user_id: {u['id']} user_name: {u['name'].lower()} followers: {u['followers']} followers"
+                        for i, u in enumerate(metrics['most_influential'], 1)
+                    ])
+                    print(f"{Fore.BLACK}The most active user/s:\n{influencer_list}{Style.RESET_ALL}")
                 except RuntimeError as e:
                     print(f"{Fore.RED}error while processing the graph{Style.RESET_ALL}")
             else:
