@@ -10,10 +10,6 @@
 
 A professional XML editor and visualizer for social network data with dual interface support (GUI and CLI). Parse, validate, format, compress, and analyze XML files with powerful graph visualization capabilities.
 
-## Screenshots
-
-### Main Entry Point
-![Entry Point](assets/images/EntryPoint.png)
 
 ## Table of Contents
 
@@ -102,6 +98,13 @@ flowchart TD
 - **Application Layer**: Controllers (`src/controllers/`) managing business logic
 - **Business Logic Layer**: Core algorithms for XML processing and graph analysis
 - **Data Access Layer**: File I/O utilities (`src/utils/file_io.py`)
+
+
+
+## Screenshots
+
+### Main Entry Point
+![Entry Point](assets/images/EntryPoint.png)
 
 ## Installation
 
